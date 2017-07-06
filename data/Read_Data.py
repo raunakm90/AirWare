@@ -193,7 +193,7 @@ class GestureData():
                                  'user': user
                                  })
             else:
-                # print(name)
+                print("Skipping files")
                 shutil.move(gest.file, user_path+'/skipped_files/')
 
         return features
@@ -243,9 +243,6 @@ class GestureData():
         X_keras[:, :, -2, :] = (X_keras[:, :, -2, :] - np.mean(X_keras[:, :, -2, :])) / np.std(X_keras[:, :, -2, :])
         X_keras[:, :, -1, :] = (X_keras[:, :, -1, :] - np.mean(X_keras[:, :, -1, :])) / np.std(X_keras[:, :, -1, :])
 
-        Y_keras_ohe = utils.to_categorical(Y_keras)
-        global NUM_CLASSES
-        NUM_CLASSES = Y_keras_ohe.shape[1]
-        print("Number of classes: ", NUM_CLASSES)
+        print("Number of classes: ", len(lab_enc.classes_))
 
         return X_keras, Y_keras, user, input_shape, lab_enc
