@@ -7,7 +7,6 @@ from keras import utils
 from scipy import signal
 import shutil
 
-
 shortNames = ["flickr", "flicku", "flickd", "flickl",
               "panl", "panr", "panu", "pand",
               "dtap", "tap", "dclick", "click",
@@ -16,6 +15,7 @@ shortNames = ["flickr", "flicku", "flickd", "flickl",
               "whip", "snap", "magicw",
               "circle",
               "erase"]
+
 
 class Gesture:
     def __init__(self, filename, load=True, nfft=4096, overlap=0.9, brange=8, max_seconds=3):
@@ -154,25 +154,26 @@ class Gesture:
 
         return (freq_range_features, ir_features)
 
+
 class GestureData():
     def __init__(self):
         print("Class to read Gesture Data")
 
     # Check if the gesture name exists
-    def map_name(self,file):
+    def map_name(self, file):
         for name in shortNames:
             if name in file:
                 return name
         return None
 
-    def is_valid_withzero(self,name, ir_data, num_samples):
+    def is_valid_withzero(self, name, ir_data, num_samples):
         possible_zeros = ["dtap", "dclick", "tap", "click",
                           "zooma", "zoomi", "whip", "snap", "magicw"]
         if np.sum((ir_data)) <= -5 * num_samples and name not in possible_zeros:
             return False
         return True
 
-    def get_user_data(self,user, **args):
+    def get_user_data(self, user, **args):
         user_path = './data/User_%d' % (user)
         files = [join(user_path, f)
                  for f in listdir(user_path) if isfile(join(user_path, f))]
@@ -194,7 +195,7 @@ class GestureData():
                                  })
             else:
                 print("Skipping files")
-                shutil.move(gest.file, user_path+'/skipped_files/')
+                shutil.move(gest.file, user_path + '/skipped_files/')
 
         return features
 
@@ -231,7 +232,7 @@ class GestureData():
         for user in [1, 2, 3, 4, 5, 6, 8, 10, 11]:
             print("Collecting data for User: ", user)
             features += self.get_user_data(user, load=True, nfft=nfft,
-                                      overlap=overlap, brange=brange, max_seconds=2.5)
+                                           overlap=overlap, brange=brange, max_seconds=2.5)
         features = sorted(features, key=lambda k: k['name'])
 
         X_keras, Y_keras, user, input_shape, lab_enc = self.keras_format(features)
