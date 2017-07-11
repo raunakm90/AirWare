@@ -118,22 +118,22 @@ def write_results(train_scores, test_scores, class_names, y_hat, y_true, file_pa
     np.savez(file_path + "_Truth.npz", y_true)
 
 
-def loso_cv(X, Y, user, lab_enc, nb_epoch=100, file_name="Exp_"):
+def loso_cv(x, y, user, lab_enc, nb_epoch=100, file_path="./leave_one_subject/FinalModel"):
     logo = LeaveOneGroupOut()
     batch_size = 10
 
     train_scores, test_scores = [], []
     train_val_hist = []
-    Y_true, Y_hat = [], []
+    y_true, y_hat = [], []
     class_names = []
     i = 1
 
-    for train_idx, test_idx in logo.split(X, Y, user):
+    for train_idx, test_idx in logo.split(x, y, user):
         print("\nUser:", i)
         i += 1
         # Train and test data - leave one subject out
-        x_train, y_train = X[train_idx, :, :, :], Y[train_idx]
-        x_test, y_test = X[test_idx, :, :, :], Y[test_idx]
+        x_train, y_train = x[train_idx, :, :, :], y[train_idx]
+        x_test, y_test = x[test_idx, :, :, :], y[test_idx]
 
         # Create copies of the train and test data sets
         x_train_copy, y_train_copy = x_train.copy(), y_train.copy()
@@ -158,11 +158,11 @@ def loso_cv(X, Y, user, lab_enc, nb_epoch=100, file_name="Exp_"):
         # Predict for test data
         yhat = np.argmax(split_model.predict([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]]), axis=1)
         class_names.append(lab_enc.classes_[y_test_copy])
-        Y_hat.append(yhat)
-        Y_true.append(y_test_copy)
+        y_hat.append(yhat)
+        y_true.append(y_test_copy)
         # K.clear_session()
     print("Writing results...")
-    write_results(train_scores, test_scores, class_names, Y_hat, Y_true, file_name)
+    write_results(train_scores, test_scores, class_names, y_hat, y_true, file_path)
     return train_val_hist
 
 
@@ -195,14 +195,14 @@ def run_final_model():
     K.clear_session()
 
 
-def grid_search(nfft_try, overlap_try, brange_try):
+def grid_search(nfft_try, overlap_try, brange_try, file_path="./leave_one_subject/"):
     K.clear_session()
     # Grid Search
     for nfft_val in nfft_try:
         for overlap_val in overlap_try:
             for brange_val in brange_try:
                 # Define file name to store results
-                fname = "./leave_one_subject/Exp_" + str(nfft_val) + "_" + str(overlap_val) + "_" + str(brange_val)
+                fname = file_path + "Exp_" + str(nfft_val) + "_" + str(overlap_val) + "_" + str(brange_val)
                 # Read and format data
                 gd = Read_Data.GestureData()
                 print("Reading data")
@@ -214,7 +214,7 @@ def grid_search(nfft_try, overlap_try, brange_try):
                                                                                               y, user,
                                                                                               lab_enc,
                                                                                               nb_epoch=100,
-                                                                                              file_name=fname)
+                                                                                              file_path=fname)
                 plot_train_hist(train_val_hist, file_path=fname)
                 K.clear_session()
 
@@ -228,7 +228,7 @@ def strat_shuffle_split(X, y, split=0.3, random_state=12345):
     return x_add_train, x_test, y_add_train, y_test
 
 
-def user_split_cv(x, y, user, lab_enc, cv_folds=5, nb_epoch=200, file_name="Exp_"):
+def user_split_cv(x, y, user, lab_enc, cv_folds=5, nb_epoch=200, file_name="./user_split_sv/FinalModel"):
     logo = LeaveOneGroupOut()
     batch_size = 10
     train_score, test_score = [], []
@@ -290,11 +290,75 @@ def user_split_cv(x, y, user, lab_enc, cv_folds=5, nb_epoch=200, file_name="Exp_
     write_results(train_score, test_score, y_hat, y_true, file_path=file_name)
 
 
+def personalized_cv(x, y, user, cv_folds=5, nb_epoch=200, file_path="./personalized_cv/FinalModel"):
+    logo = LeaveOneGroupOut()
+    batch_size = 10
+
+    i = 1
+
+    y_hat_user, y_test_user = [], []
+    test_scores_user, train_scores_user = [], []
+    train_hist_user = []
+
+    for rem_idx, keep_idx in logo.split(x, y, user):
+        print("\nUser:", i)
+        i += 1
+        user_name = "User_" + str(i)
+
+        # Keep only the user data
+        # x_rem, y_rem = x[rem_idx,:,:,:], y[rem_idx]
+        x_keep, y_keep = x[keep_idx, :, :, :], y[keep_idx]
+        train_scores, test_scores = [], []
+        train_val_hist = []
+        y_true, y_hat = [], []
+
+        # Define CV object
+        cv_strat = StratifiedShuffleSplit(n_splits=cv_folds, test_size=0.4, random_state=i * 12345)
+        j = 0
+
+        # Stratified cross validation for each user
+        for train_idx, test_idx in cv_strat.split(x_keep, y_keep):
+            print('Fold:', str(j))
+            x_train, y_train = x_keep[train_idx, :, :, :], y_keep[train_idx]
+            x_test, y_test = x_keep[test_idx, :, :, :], y_keep[test_idx]
+
+            x_train_copy, y_train_copy = x_train.copy(), y_train.copy()
+            x_test_copy, y_test_copy = x_test.copy(), y_test.copy()
+
+            split_model = split_model_1()
+            train_val_hist.append(split_model.fit_generator(
+                create_generator([x_train_copy[:, :, 0:-2, :], x_train_copy[:, :, -2:, :]], y_train_copy,
+                                 batch_size=batch_size),
+                steps_per_epoch=int(len(x_train_copy) / batch_size),  # how many generators to go through per epoch
+                epochs=nb_epoch, verbose=0,
+                validation_data=([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]], y_test_copy)))
+
+            train_scores.append(
+                split_model.evaluate([x_train_copy[:, :, 0:-2, :], x_train_copy[:, :, -2:, :]], y_train_copy))
+            test_scores.append(
+                split_model.evaluate([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]], y_test_copy))
+
+            y_hat.append(
+                np.argmax(split_model.predict([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]]), axis=1))
+            y_true.append(y_test)
+            j += 1
+
+        K.clear_session()
+        y_hat_user.append(y_hat)
+        y_test_user.append(y_true)
+        train_scores_user.append(train_scores)
+        test_scores_user.append(test_scores)
+        train_hist_user.append(train_val_hist)
+
+    write_results(train_scores_user, test_scores_user, y_hat_user, y_test_user, file_path=file_path)
+    return train_hist_user
+
+
 if __name__ == '__main__':
-    nfft_try = [int(4096), int(2048), int(1024)]
-    overlap_try = [0.9, 0.5, 0.75]
-    brange_try = [8, 16]
+    nfft_vals = [int(4096), int(2048), int(1024)]
+    overlap_vals = [0.9, 0.5, 0.75]
+    brange_vals = [8, 16]
     # Grid Search for FFT parameters
-    grid_search(nfft_try, overlap_try, brange_try)
+    grid_search(nfft_vals, overlap_vals, brange_vals)
 
     run_final_model()
