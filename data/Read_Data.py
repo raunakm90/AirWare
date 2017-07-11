@@ -7,16 +7,6 @@ from keras import utils
 from scipy import signal
 import shutil
 
-shortNames = ["flickr", "flicku", "flickd", "flickl",
-              "panl", "panr", "panu", "pand",
-              "dtap", "tap", "dclick", "click",
-              "slicel", "slicer",
-              "zooma", "zoomi",
-              "whip", "snap", "magicw",
-              "circle",
-              "erase"]
-
-
 class Gesture:
     def __init__(self, filename, load=True, nfft=4096, overlap=0.9, brange=8, max_seconds=3):
         self.file = filename
@@ -156,12 +146,30 @@ class Gesture:
 
 
 class GestureData():
-    def __init__(self):
-        print("Class to read Gesture Data")
+    def __init__(self, all_gest=True, reduced_gest1=False, reduced_gest2=False, reduced_gest3=False, reduced_gest4=False):
+        if all_gest:
+            self.shortNames = ["flickr", "flicku", "flickd", "flickl",
+                               "panl", "panr", "panu", "pand",
+                               "dtap", "tap", "dclick", "click",
+                               "slicel", "slicer",
+                               "zooma", "zoomi",
+                               "whip", "snap", "magicw",
+                               "circle", "erase"]
+        elif reduced_gest1:
+            self.shortNames = ["flickr", "flicku", "flickd", "flickl",
+                               "dtap", "dclick", "magicw","circle","erase"]
+        elif reduced_gest2:
+            self.shortNames = ["flickr", "flicku", "flickd", "flickl",
+                               "panr", "panu", "pand", "panl", "erase"]
+        elif reduced_gest3:
+            self.shortNames = ["zoomi", "zooma", "magicw",
+                          "panr", "panu", "pand", "panl", "erase"]
+        elif reduced_gest4:
+            self.shortNames = ["magicw", "slicel", "slicer", "whip"]
 
     # Check if the gesture name exists
     def map_name(self, file):
-        for name in shortNames:
+        for name in self.shortNames:
             if name in file:
                 return name
         return None
