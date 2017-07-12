@@ -13,6 +13,8 @@ import sklearn.metrics as mt
 
 import matplotlib.pyplot as plt
 
+import argparse
+
 
 # @TODO: Add args to grid search model parameters
 def split_model_1():
@@ -112,15 +114,25 @@ def create_generator(XI, Y, batch_size=64):
 
 
 def write_results(train_scores, test_scores, class_names, y_hat, y_true, file_path):
+    print("Writing results...")
     np.savez(file_path + "_Train_Scores.npz", train_scores)
     np.savez(file_path + "_Test_Scores.npz", test_scores)
     np.savez(file_path + "_Predictions.npz", y_hat)
     np.savez(file_path + "_Truth.npz", y_true)
 
 
-def loso_cv(x, y, user, lab_enc, nb_epoch=100, file_path="./leave_one_subject/FinalModel"):
-    logo = LeaveOneGroupOut()
+# Leave one subject out CV
+def loso_cv(cv_folds, gest_set, nb_epoch):
+    global NUM_CLASSES, input_shape
+    file_path = "./leave_one_subject" + "/gest_set_" + str(gest_set) + "/FinalModel"
     batch_size = 10
+
+    gd = Read_Data.GestureData(gest_set=gest_set)
+    print("Reading data")
+    x, y, user, input_shape, lab_enc = gd.compile_data(nfft=4096, overlap=0.5,
+                                                       brange=8)
+    NUM_CLASSES = len(lab_enc.classes_)
+    logo = LeaveOneGroupOut()
 
     train_scores, test_scores = [], []
     train_val_hist = []
@@ -161,7 +173,6 @@ def loso_cv(x, y, user, lab_enc, nb_epoch=100, file_path="./leave_one_subject/Fi
         y_hat.append(yhat)
         y_true.append(y_test_copy)
         # K.clear_session()
-    print("Writing results...")
     write_results(train_scores, test_scores, class_names, y_hat, y_true, file_path)
     return train_val_hist
 
@@ -177,48 +188,6 @@ def plot_train_hist(train_val_hist, file_path):
     plt.savefig(file_path + "Loss_History.png")
 
 
-def run_final_model():
-    global NUM_CLASSES, input_shape
-    fname = "./leave_one_subject/Final_Model"
-    gd = Read_Data.GestureData()
-    print("Reading data")
-    x, y, user, input_shape, lab_enc = gd.compile_data(nfft=4096, overlap=0.5, brange=8)
-    NUM_CLASSES = len(lab_enc.classes_)
-
-    print("Train the model")
-    train_val_hist = loso_cv(x,
-                             y, user,
-                             lab_enc,
-                             nb_epoch=5,
-                             file_name=fname)
-    plot_train_hist(train_val_hist, file_path=fname)
-    K.clear_session()
-
-
-def grid_search(nfft_try, overlap_try, brange_try, file_path="./leave_one_subject/"):
-    K.clear_session()
-    # Grid Search
-    for nfft_val in nfft_try:
-        for overlap_val in overlap_try:
-            for brange_val in brange_try:
-                # Define file name to store results
-                fname = file_path + "Exp_" + str(nfft_val) + "_" + str(overlap_val) + "_" + str(brange_val)
-                # Read and format data
-                gd = Read_Data.GestureData()
-                print("Reading data")
-                x, y, user, input_shape, lab_enc = gd.compile_data(nfft=nfft_val, overlap=overlap_val,
-                                                                   brange=brange_val)
-                print("NFFT_Val: ", nfft_val, "Overlap_Val: ", overlap_val, "Brange_Val:", brange_val)
-                print("Train the model")
-                train_score, test_score, train_val_hist, class_names, y_hat, y_true = loso_cv(x,
-                                                                                              y, user,
-                                                                                              lab_enc,
-                                                                                              nb_epoch=100,
-                                                                                              file_path=fname)
-                plot_train_hist(train_val_hist, file_path=fname)
-                K.clear_session()
-
-
 def strat_shuffle_split(X, y, split=0.3, random_state=12345):
     cv_obj = StratifiedShuffleSplit(n_splits=1, test_size=split, random_state=random_state)
     for train_idx, test_idx in cv_obj.split(X, y):
@@ -228,9 +197,19 @@ def strat_shuffle_split(X, y, split=0.3, random_state=12345):
     return x_add_train, x_test, y_add_train, y_test
 
 
-def user_split_cv(x, y, user, lab_enc, cv_folds=5, nb_epoch=200, file_name="./user_split_sv/FinalModel"):
-    logo = LeaveOneGroupOut()
+# 60-40 User split CV
+def user_split_cv(cv_folds, nb_epoch, gest_set):
+    global NUM_CLASSES, input_shape
+    file_path = "./user_split_cv" + "/gest_set_" + str(gest_set) + "/FinalModel"
     batch_size = 10
+
+    gd = Read_Data.GestureData(gest_set=gest_set)
+    print("Reading data")
+    x, y, user, input_shape, lab_enc = gd.compile_data(nfft=4096, overlap=0.5,
+                                                       brange=8)
+    NUM_CLASSES = len(lab_enc.classes_)
+
+    logo = LeaveOneGroupOut()
     train_score, test_score = [], []
     y_hat, y_true = [], []
     i = 0
@@ -287,14 +266,23 @@ def user_split_cv(x, y, user, lab_enc, cv_folds=5, nb_epoch=200, file_name="./us
         y_hat.append(cv_yhat)
         y_true.append(cv_ytrue)
         K.clear_session()
-    write_results(train_score, test_score, y_hat, y_true, file_path=file_name)
+    write_results(train_score, test_score, y_hat, y_true, file_path=file_path)
 
 
-def personalized_cv(x, y, user, cv_folds=5, nb_epoch=200, file_path="./personalized_cv/FinalModel"):
-    logo = LeaveOneGroupOut()
+# Personalized user CV
+def personalized_cv(cv_folds, nb_epoch, gest_set):
+    global NUM_CLASSES, input_shape
+    file_path = "./personalized_cv" + "/gest_set_" + str(gest_set) + "/FinalModel"
     batch_size = 10
+    # CV object
+    logo = LeaveOneGroupOut()
+    i = 0
 
-    i = 1
+    gd = Read_Data.GestureData(gest_set=gest_set)
+    print("Reading data")
+    x, y, user, input_shape, lab_enc = gd.compile_data(nfft=4096, overlap=0.5,
+                                                       brange=8)
+    NUM_CLASSES = len(lab_enc.classes_)
 
     y_hat_user, y_test_user = [], []
     test_scores_user, train_scores_user = [], []
@@ -355,10 +343,24 @@ def personalized_cv(x, y, user, cv_folds=5, nb_epoch=200, file_path="./personali
 
 
 if __name__ == '__main__':
-    nfft_vals = [int(4096), int(2048), int(1024)]
-    overlap_vals = [0.9, 0.5, 0.75]
-    brange_vals = [8, 16]
-    # Grid Search for FFT parameters
-    grid_search(nfft_vals, overlap_vals, brange_vals)
-
-    run_final_model()
+    function_map = {'loso': loso_cv,
+                    'user_split': user_split_cv,
+                    'personalized_cv': personalized_cv}
+    parser = argparse.ArgumentParser(description="AirWare grid search and train model using different CV strategies")
+    # "?" one argument consumed from the command line and produced as a single item
+    # Positional arguments
+    parser.add_argument('-cv_strategy',
+                        help="Define CV Strategy. loso: Leave one subject out, user_split: Partial train and test "
+                             "user, personalized_cv: Train and test only for a given user",
+                        choices=['loso', 'user_split',
+                                 'personalized_cv'])
+    parser.add_argument('-gesture_set', type=int, default=1,
+                        help="Gesture set. 1: All gestures, 2: Reduced Gesture 1, 3: Reduced Gesture 2, 4: Reduced "
+                             "Gesture 3, 5: Reduced Gesture 4",
+                        choices=range(1,6))
+    parser.add_argument('-cv_folds', type=int, help="Number of Cross validation folds", default=5)
+    parser.add_argument('-nb_epoch', type=int, help="Number of epochs that trains the model", default=10)
+    args = parser.parse_args()
+    function = function_map[args.cv_strategy]
+    print("Cross Validation Strategy:", function)
+    function(args.cv_folds, args.gesture_set, args.nb_epoch)

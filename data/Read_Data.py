@@ -7,6 +7,7 @@ from keras import utils
 from scipy import signal
 import shutil
 
+
 class Gesture:
     def __init__(self, filename, load=True, nfft=4096, overlap=0.9, brange=8, max_seconds=3):
         self.file = filename
@@ -146,8 +147,8 @@ class Gesture:
 
 
 class GestureData():
-    def __init__(self, all_gest=True, reduced_gest1=False, reduced_gest2=False, reduced_gest3=False, reduced_gest4=False):
-        if all_gest:
+    def __init__(self, gest_set=1):
+        if gest_set == 1:
             self.shortNames = ["flickr", "flicku", "flickd", "flickl",
                                "panl", "panr", "panu", "pand",
                                "dtap", "tap", "dclick", "click",
@@ -155,16 +156,16 @@ class GestureData():
                                "zooma", "zoomi",
                                "whip", "snap", "magicw",
                                "circle", "erase"]
-        elif reduced_gest1:
+        elif gest_set == 2:
             self.shortNames = ["flickr", "flicku", "flickd", "flickl",
-                               "dtap", "dclick", "magicw","circle","erase"]
-        elif reduced_gest2:
+                               "dtap", "dclick", "magicw", "circle", "erase"]
+        elif gest_set == 3:
             self.shortNames = ["flickr", "flicku", "flickd", "flickl",
                                "panr", "panu", "pand", "panl", "erase"]
-        elif reduced_gest3:
+        elif gest_set == 4:
             self.shortNames = ["zoomi", "zooma", "magicw",
-                          "panr", "panu", "pand", "panl", "erase"]
-        elif reduced_gest4:
+                               "panr", "panu", "pand", "panl", "erase"]
+        elif gest_set == 5:
             self.shortNames = ["magicw", "slicel", "slicer", "whip"]
 
     # Check if the gesture name exists
@@ -203,7 +204,7 @@ class GestureData():
                                  })
             else:
                 print("Skipping files")
-                shutil.move(gest.file, user_path + '/skipped_files/')
+                # shutil.move(gest.file, user_path + '/skipped_files/')
 
         return features
 
