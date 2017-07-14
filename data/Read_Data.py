@@ -3,9 +3,7 @@ from os.path import isfile, join
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder
-from keras import utils
 from scipy import signal
-import shutil
 
 
 class Gesture:
@@ -236,7 +234,7 @@ class GestureData():
 
         return x, y, user, input_shape, le
 
-    def compile_data(self, nfft, overlap, brange):
+    def compile_data(self, nfft, overlap, brange, keras_format=True):
         features = []
         for user in [1, 2, 3, 4, 5, 6, 8, 10, 11]:
             print("Collecting data for User: ", user)
@@ -244,15 +242,58 @@ class GestureData():
                                            overlap=overlap, brange=brange, max_seconds=2.5)
         features = sorted(features, key=lambda k: k['name'])
 
-        X_keras, Y_keras, user, input_shape, lab_enc = self.keras_format(features)
+        if keras_format:
+            x_keras, y_keras, user, input_shape, lab_enc = self.keras_format(features)
 
-        # normalize spec grams
-        X_keras[:, :, :-2, :] = (X_keras[:, :, :-2, :] - np.mean(X_keras[:, :, :-2, :])) / np.std(X_keras[:, :, :-2, :])
+            # normalize spec grams
+            x_keras[:, :, :-2, :] = (x_keras[:, :, :-2, :] - np.mean(x_keras[:, :, :-2, :])) / np.std(x_keras[:, :, :-2, :])
 
-        # normalize the ir values
-        X_keras[:, :, -2, :] = (X_keras[:, :, -2, :] - np.mean(X_keras[:, :, -2, :])) / np.std(X_keras[:, :, -2, :])
-        X_keras[:, :, -1, :] = (X_keras[:, :, -1, :] - np.mean(X_keras[:, :, -1, :])) / np.std(X_keras[:, :, -1, :])
+            # normalize the ir values
+            x_keras[:, :, -2, :] = (x_keras[:, :, -2, :] - np.mean(x_keras[:, :, -2, :])) / np.std(x_keras[:, :, -2, :])
+            x_keras[:, :, -1, :] = (x_keras[:, :, -1, :] - np.mean(x_keras[:, :, -1, :])) / np.std(x_keras[:, :, -1, :])
 
-        print("Number of classes: ", len(lab_enc.classes_))
+            print("Number of classes: ", len(lab_enc.classes_))
 
-        return X_keras, Y_keras, user, input_shape, lab_enc
+            return x_keras, y_keras, user, input_shape, lab_enc
+        else:
+            x_baseline, y_baseline, user, lab_enc = self.baseline_format(features)
+
+            return x_baseline, y_baseline, user, lab_enc
+
+    def baseline_format(self, features):
+        # Encoding the gestures
+        y = [item['name'] for item in features]
+        le = LabelEncoder()
+        y = le.fit_transform(y)
+        y = y.reshape((-1, 1))
+
+        nb_samples = len(features)
+        nb_rows = features[0]['features'].shape[0] - 2
+        nb_col = features[0]['features'].shape[1]
+
+        x = np.empty([nb_samples, nb_col * nb_rows + 2])
+        for i, item in enumerate(features):
+            feat = item['features'].T
+            doppler_feature = feat[:, :-2].reshape(-1)  # Flatten out doppler signature values
+            ir1 = feat[:, -1]
+            if ir1.sum() != 0:
+                ir1_feature = np.true_divide(ir1.sum(), (ir1 != 0).sum())
+            else:
+                ir1_feature = 0
+
+            ir2 = feat[:, -2]
+            if ir2.sum() != 0:
+                ir2_feature = np.true_divide(ir2.sum(), (ir2 != 0).sum())
+            else:
+                ir2_feature = 0
+
+            x[i, :] = np.hstack([doppler_feature, ir1_feature, ir2_feature])
+
+        # Extracting the users
+        user = [item['user'] for item in features]
+        user = np.array(user)
+
+        print("\nInput shape:{0}".format(x.shape))
+        print("\nLabels shape:{0}".format(y.shape))
+
+        return x, y, user, le
