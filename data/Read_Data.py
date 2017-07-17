@@ -265,7 +265,7 @@ class GestureData():
         y = [item['name'] for item in features]
         le = LabelEncoder()
         y = le.fit_transform(y)
-        y = y.reshape((-1, 1))
+        y = y.reshape(-1)
 
         nb_samples = len(features)
         nb_rows = features[0]['features'].shape[0] - 2
