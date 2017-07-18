@@ -62,7 +62,7 @@ def create_generator(XI, Y, batch_size=64):
     X = XI[0]
     I = XI[1]
     while True:
-        # suffled indices
+        # shuffled indices
         idx = np.random.permutation(X.shape[0])
         # create image generator
         datagenSpec = ImageDataGenerator(
