@@ -1,0 +1,15 @@
+$null
+data/
+.idea/
+.ipynb_checkpoints/
+Results.ipynb
+Untitled.ipynb
+_airware_tensorboard/
+_mnist/
+baseline_models/
+bergstra12a.pdf
+gridSearch/
+leave_one_subject/
+personalized_cv/
+user_split_cv/
+airware-utilizing-deep.pdf
