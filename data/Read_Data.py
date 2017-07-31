@@ -234,15 +234,17 @@ class GestureData():
 
         return x, y, user, input_shape, le
 
-    def compile_data(self, nfft, overlap, brange, keras_format=True):
+    def compile_data(self, nfft, overlap, brange, keras_format=True, baseline_format=True, plot_spectogram=True):
         features = []
-        for user in [1, 2, 3, 4, 5, 6, 8, 10, 11]:
+        for user in [1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13, 14, 15, 16, 17]:
             print("Collecting data for User: ", user)
             features += self.get_user_data(user, load=True, nfft=nfft,
                                            overlap=overlap, brange=brange, max_seconds=2.5)
         features = sorted(features, key=lambda k: k['name'])
 
-        if keras_format:
+        if plot_spectogram:
+            return features
+        elif keras_format:
             x_keras, y_keras, user, input_shape, lab_enc = self.keras_format(features)
 
             # normalize spec grams
@@ -253,12 +255,12 @@ class GestureData():
             x_keras[:, :, -1, :] = (x_keras[:, :, -1, :] - np.mean(x_keras[:, :, -1, :])) / np.std(x_keras[:, :, -1, :])
 
             print("Number of classes: ", len(lab_enc.classes_))
-
             return x_keras, y_keras, user, input_shape, lab_enc
-        else:
+        elif baseline_format:
             x_baseline, y_baseline, user, lab_enc = self.baseline_format(features)
-
             return x_baseline, y_baseline, user, lab_enc
+        else:
+            raise ValueError('Could not find data format option to return')
 
     def baseline_format(self, features):
         # Encoding the gestures
