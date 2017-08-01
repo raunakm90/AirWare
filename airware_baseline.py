@@ -138,6 +138,9 @@ def gridSearch_clf(x, y, groups, param_grid, clf, file_path='./baseline_models/'
     print("Best Score")
     print(grid.best_score_)
 
+    print("Grid Search based Best Estimator")
+    print(grid.best_estimator_)
+
     print("Saving best estimator to disk")
     joblib.dump(grid.best_params_, filename=file_path + "clf_gridsearch.pkl")
 
@@ -158,7 +161,7 @@ def run_gridSearch_svm():
 
     gd = Read_Data.GestureData(gest_set=1)
     x, y, user, lab_enc = gd.compile_data(nfft=4096, overlap=0.5,
-                                          brange=8, keras_format=False)
+                                          brange=8, keras_format=False, plot_spectogram=False, baseline_format=True)
     # Delete near zero variance columns
     nz_var_ind = remove_near_zero_var(x, thresh=20)
     x = np.delete(x, nz_var_ind, axis=1)
@@ -185,7 +188,7 @@ def run_gridSearch_mlp():
     start = time.time()
     gd = Read_Data.GestureData(gest_set=1)
     x, y, user, lab_enc = gd.compile_data(nfft=4096, overlap=0.5,
-                                          brange=8, keras_format=False)
+                                          brange=8, keras_format=False, plot_spectogram=False, baseline_format=True)
 
     # Delete near zero variance columns
     nz_var_ind = remove_near_zero_var(x, thresh=20)
@@ -273,13 +276,21 @@ def plot_learning_curve(train_sizes, train_scores, test_scores, title, file_path
     plt.savefig(file_path)
 
 
+def write_results(train_sizes, train_scores, test_scores, file_path):
+    print("Writing results...")
+    np.savez(file_path + "_Train_Sizes.npz", train_sizes)
+    np.savez(file_path + "_Train_Scores.npz", train_scores)
+    np.savez(file_path + "_Test_Scores.npz", test_scores)
+
+
 def eval_model(clf_pipe, x, y, file_path):
     cv_obj = StratifiedShuffleSplit(n_splits=5, random_state=234, test_size=0.3)
     train_sizes = np.linspace(.1, 1.0, 5)
     train_sizes, train_scores, test_scores = learning_curve(clf_pipe, x, y, cv=cv_obj,
                                                             n_jobs=-1, train_sizes=train_sizes)
-    plot_learning_curve(train_sizes, train_scores, test_scores, "SVM_Learning_Curve",
-                        file_path)
+    write_results(train_sizes, train_scores, test_scores, file_path)
+    # plot_learning_curve(train_sizes, train_scores, test_scores, "SVM_Learning_Curve",
+    #                     file_path)
 
 
 def run_eval_svm():
@@ -293,7 +304,7 @@ def run_eval_svm():
     start = time.time()
     gd = Read_Data.GestureData(gest_set=1)
     x, y, user, lab_enc = gd.compile_data(nfft=4096, overlap=0.5,
-                                          brange=8, keras_format=False)
+                                          brange=8, keras_format=False, plot_spectogram=False, baseline_format=True)
 
     # Delete near zero variance columns
     nz_var_ind = remove_near_zero_var(x, thresh=20)
@@ -305,7 +316,7 @@ def run_eval_svm():
     #                                              cv=cv_obj, scoring='accuracy', n_jobs=-1)
     # plot_validation_curve(train_scores, test_scores, param_range, "./baseline_models/svm/Validation_Curve.png")
 
-    eval_model(svm_clf_pipe, x, y, "./baseline_models/svm/Learning_Curve.png")
+    eval_model(svm_clf_pipe, x, y, "./baseline_models/svm/SVM")
 
     print('It took ', time.time() - start, ' seconds.')
 
@@ -376,5 +387,5 @@ def train_svm_loso():
 if __name__ == '__main__':
     # run_gridSearch_mlp()
     # run_gridSearch_svm()
-    # run_eval_svm()
-    train_svm_loso()
+    run_eval_svm()
+    # train_svm_loso()

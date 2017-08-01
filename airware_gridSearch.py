@@ -177,7 +177,7 @@ def loso_gridSearch_cv(x, y, user, lab_enc, batch_size=10, nb_epoch=10, file_pat
     return train_val_hist
 
 
-def grid_search(nb_epoch=10):
+def grid_search(nb_epoch=200):
     global NUM_CLASSES, input_shape
     file_path = "./gridSearch/"
     nfft_try = [int(4096), int(2048), int(1024)]
@@ -195,7 +195,9 @@ def grid_search(nb_epoch=10):
                 gd = Read_Data.GestureData(gest_set=1)
                 print("Reading data")
                 x, y, user, input_shape, lab_enc = gd.compile_data(nfft=nfft_val, overlap=overlap_val,
-                                                                   brange=brange_val)
+                                                                   brange=brange_val, keras_format=True,
+                                                                   plot_spectogram=False,
+                                                                   baseline_format=False)
                 NUM_CLASSES = len(lab_enc.classes_)
                 print("NFFT_Val: ", nfft_val, "Overlap_Val: ", overlap_val, "Brange_Val:", brange_val)
                 print("Train the model")
@@ -209,4 +211,4 @@ def grid_search(nb_epoch=10):
 
 if __name__ == '__main__':
     print("Grid Search FFT parameters")
-    grid_search(nb_epoch=1)
+    grid_search()
