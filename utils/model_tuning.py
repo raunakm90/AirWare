@@ -8,10 +8,6 @@ from sklearn.preprocessing import StandardScaler
 
 
 def gridSearch_clf(x, y, groups, param_grid, clf, file_path='./baseline_models/'):
-    # Delete near zero variance columns
-    nz_var_ind = remove_near_zero_var(x, thresh=20)
-    x = np.delete(x, nz_var_ind, axis=1)
-
     # Define Leave one subject out CV object
     cv_obj = LeaveOneGroupOut()
 

@@ -17,6 +17,10 @@ def run_gridSearch_mlp():
                                           plot_spectogram=False,
                                           baseline_format=True)
 
+    # Delete near zero variance columns
+    nz_var_ind = remove_near_zero_var(x, thresh=20)
+    x = np.delete(x, nz_var_ind, axis=1)
+
     # Create a mask for PCA only on doppler signature
     mask = np.arange(x.shape[1]) < x.shape[1] - 2
 
@@ -61,7 +65,7 @@ def run_eval_mlp():
                                           brange=8, keras_format=False,
                                           plot_spectogram=False,
                                           baseline_format=True)
-    eval_model(svm_clf_pipe, x, y, MODEL_PATH + "SVM")
+    eval_model(svm_clf_pipe, x, y, MODEL_PATH + "MLP")
 
     print('It took ', time.time() - start, ' seconds.')
 
@@ -74,7 +78,7 @@ def train_mlp_loso():
     class_names = []
     i = 1
 
-    svm_clf_params = joblib.load(MODEL_PATH + "clf_gridsearch.pkl")
+    mlp_clf_params = joblib.load(MODEL_PATH + "clf_gridsearch.pkl")
     pipe = Pipeline([
         ('normalize', StandardScaler()),
         ('reduce_dim', MaskedPCA()),
@@ -104,7 +108,7 @@ def train_mlp_loso():
         x_test_copy, y_test_copy = x_test.copy(), y_test.copy()
 
         # Call model function - Refit a new model
-        clf_pipe = pipe.set_params(**svm_clf_params)
+        clf_pipe = pipe.set_params(**mlp_clf_params)
 
         # Fit model
         clf_pipe.fit(x_train_copy, y_train_copy)
@@ -123,7 +127,7 @@ def train_mlp_loso():
     y_hat = flat_list_of_array(y_hat)
 
     # class_names = flat_list_of_array(class_names)
-    print(classification_report(y_true=y_true, y_pred=y_hat, target_names=lab_enc.classes_, file_path=file_path))
+    print(classification_report(y_true=y_true, y_pred=y_hat, target_names=lab_enc.classes_, file_path=MODEL_PATH))
     print('It took ', time.time() - start, ' seconds.')
     return None
 

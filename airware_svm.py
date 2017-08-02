@@ -27,6 +27,10 @@ def run_gridSearch_svm():
                                           plot_spectogram=False,
                                           baseline_format=True)
 
+    # Delete near zero variance columns
+    nz_var_ind = remove_near_zero_var(x, thresh=20)
+    x = np.delete(x, nz_var_ind, axis=1)
+
     # Create a mask for PCA only on doppler signature
     mask = np.arange(x.shape[1]) < x.shape[1] - 2
     param_grid = [
@@ -49,7 +53,7 @@ def run_gridSearch_svm():
 
 
 def run_eval_svm():
-    svm_clf_params = joblib.load(file_path + "clf_gridsearch.pkl")
+    svm_clf_params = joblib.load(MODEL_PATH + "clf_gridsearch.pkl")
 
     pipe = Pipeline([
         ('normalize', StandardScaler()),
