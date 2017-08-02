@@ -359,8 +359,7 @@ def personalized_cv(cv_folds, nb_epoch, gest_set, batch_size):
         test_scores_user.append(test_scores)
         train_hist_user.append(train_val_hist)
 
-    write_results(train_scores_user, test_scores_user, class_names_user, y_hat_user, y_test_user, file_path,
-                  train_hist_user)
+    write_results(train_scores_user, test_scores_user, class_names_user, y_hat_user, y_test_user, file_path)
     return train_hist_user
 
 
