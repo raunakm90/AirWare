@@ -122,6 +122,7 @@ def write_results(train_scores, test_scores, class_names, y_hat, y_true, file_pa
     np.savez(file_path + "_Test_Scores.npz", test_scores)
     np.savez(file_path + "_Predictions.npz", y_hat)
     np.savez(file_path + "_Truth.npz", y_true)
+    np.savez(file_path + "_Class_Names.npz", class_names)
 
 
 # Leave one subject out CV
@@ -177,20 +178,10 @@ def loso_cv(cv_folds, gest_set, nb_epoch):
         class_names.append(lab_enc.classes_[y_test_copy])
         y_hat.append(yhat)
         y_true.append(y_test_copy)
-        # K.clear_session()
-    write_results(train_scores, test_scores, class_names, y_hat, y_true, file_path)
+        K.clear_session()
+    write_results(train_scores, test_scores, class_names, y_hat, y_true, file_path,
+                  train_val_hist)
     return train_val_hist
-
-
-def plot_train_hist(train_val_hist, file_path):
-    fig, axarr = plt.subplots(1, 2, sharey=True)
-    i = 1
-    for item in train_val_hist:
-        axarr[0].plot(item.history['loss'], label='User_' + str(i))
-        axarr[1].plot(item.history['val_loss'], label='User_' + str(i))
-        i += 1
-    plt.legend(loc='best')
-    plt.savefig(file_path + "Loss_History.png")
 
 
 def strat_shuffle_split(x, y, split=0.3, random_state=12345):
@@ -219,6 +210,8 @@ def user_split_cv(cv_folds, nb_epoch, gest_set):
     logo = LeaveOneGroupOut()
     train_score, test_score = [], []
     y_hat, y_true = [], []
+    class_names = []
+    train_val_hist = []
     i = 0
     for train_idx, test_idx in logo.split(x, y, user):
         i += 1
@@ -229,6 +222,8 @@ def user_split_cv(cv_folds, nb_epoch, gest_set):
 
         cv_train_score, cv_test_score = [], []
         cv_yhat, cv_ytrue = [], []
+        cv_class_names = []
+        cv_train_val_hist = []
 
         for j in range(cv_folds):
             print("Fold:", j)
@@ -251,12 +246,12 @@ def user_split_cv(cv_folds, nb_epoch, gest_set):
             y_test_copy = y_test_new.copy()
 
             split_model = split_model_1()
-            split_model.fit_generator(
+            cv_train_val_hist.append(split_model.fit_generator(
                 create_generator([x_train_copy[:, :, 0:-2, :], x_train_copy[:, :, -2:, :]], y_train_copy,
                                  batch_size=batch_size),
                 steps_per_epoch=int(len(x_train_copy) / batch_size),  # how many generators to go through per epoch
                 epochs=nb_epoch, verbose=0,
-                validation_data=([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]], y_test_copy))
+                validation_data=([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]], y_test_copy)))
 
             cv_train_score.append(
                 split_model.evaluate([x_train_copy[:, :, 0:-2, :], x_train_copy[:, :, -2:, :]], y_train_copy))
@@ -264,7 +259,7 @@ def user_split_cv(cv_folds, nb_epoch, gest_set):
                 split_model.evaluate([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]], y_test_copy))
 
             y_hat_temp = np.argmax(split_model.predict([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]]), axis=1)
-            # cv_class_names.append(lab_enc.classes_[y_test_copy])
+            cv_class_names.append(lab_enc.classes_[y_test_copy])
             cv_ytrue.append(y_test_copy)
             cv_yhat.append(y_hat_temp)
 
@@ -272,8 +267,10 @@ def user_split_cv(cv_folds, nb_epoch, gest_set):
         test_score.append(cv_test_score)
         y_hat.append(cv_yhat)
         y_true.append(cv_ytrue)
+        class_names.append(cv_class_names)
+        train_val_hist.append(cv_train_val_hist)
         K.clear_session()
-    write_results(train_score, test_score, y_hat, y_true, file_path=file_path)
+    write_results(train_score, test_score, class_names, y_hat, y_true, file_path=file_path)
 
 
 # Personalized user CV
@@ -294,6 +291,7 @@ def personalized_cv(cv_folds, nb_epoch, gest_set):
     NUM_CLASSES = len(lab_enc.classes_)
 
     y_hat_user, y_test_user = [], []
+    class_names_user = []
     test_scores_user, train_scores_user = [], []
     train_hist_user = []
 
@@ -308,6 +306,7 @@ def personalized_cv(cv_folds, nb_epoch, gest_set):
         train_scores, test_scores = [], []
         train_val_hist = []
         y_true, y_hat = [], []
+        class_names = []
 
         # Define CV object
         cv_strat = StratifiedShuffleSplit(n_splits=cv_folds, test_size=0.4, random_state=i * 12345)
@@ -338,16 +337,19 @@ def personalized_cv(cv_folds, nb_epoch, gest_set):
             y_hat.append(
                 np.argmax(split_model.predict([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]]), axis=1))
             y_true.append(y_test)
+            class_names.append(lab_enc.classes_[y_test_copy])
             j += 1
 
         K.clear_session()
         y_hat_user.append(y_hat)
         y_test_user.append(y_true)
+        class_names_user.append(class_names)
         train_scores_user.append(train_scores)
         test_scores_user.append(test_scores)
         train_hist_user.append(train_val_hist)
 
-    write_results(train_scores_user, test_scores_user, y_hat_user, y_test_user, file_path=file_path)
+    write_results(train_scores_user, test_scores_user, class_names_user, y_hat_user, y_test_user, file_path,
+                  train_val_hist)
     return train_hist_user
 
 

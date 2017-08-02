@@ -59,3 +59,42 @@ def write_results(train_sizes, train_scores, test_scores, file_path):
     np.savez(file_path + "_Train_Sizes.npz", train_sizes)
     np.savez(file_path + "_Train_Scores.npz", train_scores)
     np.savez(file_path + "_Test_Scores.npz", test_scores)
+
+
+# Training history for DL models
+def plot_train_hist(train_val_hist, file_path):
+    # Plot cross entropy loss
+    fig, axarr = plt.subplots(1, 2, sharey=True, figsize=(18, 8))
+    i = 1
+    for item in train_val_hist:
+        axarr[0].plot(item.history['loss'], label='User_' + str(i))
+        axarr[0].set_xlabel("Number of Epochs")
+        axarr[0].set_ylabel("Loss")
+        axarr[1].plot(item.history['val_loss'], label='User_' + str(i))
+        axarr[1].set_xlabel("Number of Epochs")
+        axarr[1].set_ylabel("Loss")
+        i += 1
+    axarr[1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.suptitle("Cross-Entropy Loss History")
+    axarr[0].set_title("Training Cross-Entropy Loss")
+    axarr[1].set_title("Validation Cross-Entropy Loss")
+    plt.savefig(file_path + "Loss_History.png")
+
+    # Plot accuracy
+    fig, axarr = plt.subplots(1, 2, sharey=True, figsize=(18, 8))
+    i = 1
+    for item in train_val_hist:
+        axarr[0].plot(item.history['acc'], label='User_' + str(i))
+        axarr[0].set_xlabel("Number of Epochs")
+        axarr[0].set_ylabel("Accuracy")
+        axarr[1].plot(item.history['val_acc'], label='User_' + str(i))
+        axarr[1].set_xlabel("Number of Epochs")
+        axarr[1].set_ylabel("Accuracy")
+        i += 1
+    axarr[1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.suptitle("Accuracy History")
+    axarr[0].set_title("Training Accuracy")
+    axarr[1].set_title("Validation Accuracy")
+    plt.savefig(file_path + "Accuracy_History.png")
+
+    return None
