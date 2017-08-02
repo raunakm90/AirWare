@@ -116,13 +116,14 @@ def create_generator(XI, Y, batch_size=64):
         break
 
 
-def write_results(train_scores, test_scores, class_names, y_hat, y_true, file_path):
+def write_results(train_scores, test_scores, class_names, y_hat, y_true, file_path, train_val_hist):
     print("Writing results...")
     np.savez(file_path + "_Train_Scores.npz", train_scores)
     np.savez(file_path + "_Test_Scores.npz", test_scores)
     np.savez(file_path + "_Predictions.npz", y_hat)
     np.savez(file_path + "_Truth.npz", y_true)
     np.savez(file_path + "_Class_Names.npz", class_names)
+    np.savez(file_path + "_Train_Val_Hist.npz", train_val_hist)
 
 
 # Leave one subject out CV
