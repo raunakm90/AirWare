@@ -116,14 +116,27 @@ def create_generator(XI, Y, batch_size=64):
         break
 
 
-def write_results(train_scores, test_scores, class_names, y_hat, y_true, file_path, train_val_hist):
+def write_results(train_scores, test_scores, class_names, y_hat, y_true, file_path):
     print("Writing results...")
     np.savez(file_path + "_Train_Scores.npz", train_scores)
     np.savez(file_path + "_Test_Scores.npz", test_scores)
     np.savez(file_path + "_Predictions.npz", y_hat)
     np.savez(file_path + "_Truth.npz", y_true)
     np.savez(file_path + "_Class_Names.npz", class_names)
-    np.savez(file_path + "_Train_Val_Hist.npz", train_val_hist)
+
+
+def write_train_hist(train_val_hist, file_path):
+    train_loss, val_loss = [], []
+    train_acc, val_acc = [], []
+    for item in train_val_hist:
+        train_loss.append(item.history['loss'])
+        val_loss.append(item.history['val_loss'])
+        train_acc.append(item.history['acc'])
+        val_acc.append(item.history['val_acc'])
+    np.savez(file_path + "_Train_Loss.npz", train_loss)
+    np.savez(file_path + "_Train_Acc.npz", train_acc)
+    np.savez(file_path + "_Val_Loss.npz", val_loss)
+    np.savez(file_path + "_Val_Acc.npz", val_acc)
 
 
 # Leave one subject out CV
@@ -179,8 +192,8 @@ def loso_cv(cv_folds, gest_set, nb_epoch, batch_size):
         y_hat.append(yhat)
         y_true.append(y_test_copy)
         K.clear_session()
-    write_results(train_scores, test_scores, class_names, y_hat, y_true, file_path,
-                  train_val_hist)
+    write_results(train_scores, test_scores, class_names, y_hat, y_true, file_path)
+    write_train_hist(train_val_hist, file_path)
     return train_val_hist
 
 
@@ -347,7 +360,7 @@ def personalized_cv(cv_folds, nb_epoch, gest_set, batch_size):
         train_hist_user.append(train_val_hist)
 
     write_results(train_scores_user, test_scores_user, class_names_user, y_hat_user, y_test_user, file_path,
-                  train_val_hist)
+                  train_hist_user)
     return train_hist_user
 
 
