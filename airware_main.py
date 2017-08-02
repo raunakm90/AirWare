@@ -127,10 +127,9 @@ def write_results(train_scores, test_scores, class_names, y_hat, y_true, file_pa
 
 
 # Leave one subject out CV
-def loso_cv(cv_folds, gest_set, nb_epoch):
+def loso_cv(cv_folds, gest_set, nb_epoch, batch_size):
     global NUM_CLASSES, input_shape
     file_path = "./leave_one_subject" + "/gest_set_" + str(gest_set) + "/FinalModel"
-    batch_size = 10
 
     gd = Read_Data.GestureData(gest_set=gest_set)
     print("Reading data")
@@ -195,10 +194,9 @@ def strat_shuffle_split(x, y, split=0.3, random_state=12345):
 
 
 # 60-40 User split CV
-def user_split_cv(cv_folds, nb_epoch, gest_set):
+def user_split_cv(cv_folds, nb_epoch, gest_set, batch_size):
     global NUM_CLASSES, input_shape
     file_path = "./user_split_cv" + "/gest_set_" + str(gest_set) + "/FinalModel"
-    batch_size = 10
 
     gd = Read_Data.GestureData(gest_set=gest_set)
     print("Reading data")
@@ -275,10 +273,9 @@ def user_split_cv(cv_folds, nb_epoch, gest_set):
 
 
 # Personalized user CV
-def personalized_cv(cv_folds, nb_epoch, gest_set):
+def personalized_cv(cv_folds, nb_epoch, gest_set, batch_size):
     global NUM_CLASSES, input_shape
     file_path = "./personalized_cv" + "/gest_set_" + str(gest_set) + "/FinalModel"
-    batch_size = 10
     # CV object
     logo = LeaveOneGroupOut()
     i = 0
@@ -368,11 +365,12 @@ if __name__ == '__main__':
                                  'personalized_cv'])
     parser.add_argument('-gesture_set', type=int, default=1,
                         help="Gesture set. 1: All gestures, 2: Reduced Gesture 1, 3: Reduced Gesture 2, 4: Reduced "
-                             "Gesture 3, 5: Reduced Gesture 4",
+                             "Gesture 3, 5: Reduced Gesture 4. Default is full gesture set",
                         choices=range(1, 6))
-    parser.add_argument('-cv_folds', type=int, help="Number of Cross validation folds", default=5)
-    parser.add_argument('-nb_epoch', type=int, help="Number of epochs that trains the model", default=10)
+    parser.add_argument('-cv_folds', type=int, help="Number of Cross validation folds. Default is 5", default=5)
+    parser.add_argument('-nb_epoch', type=int, help="Number of epochs that trains the model. Default is 10", default=10)
+    parser.add_argument('-batch_size', type=int, help="Batch size to train the model. Default is 10", default=10)
     args = parser.parse_args()
     function = function_map[args.cv_strategy]
     print("Cross Validation Strategy:", function)
-    function(args.cv_folds, args.gesture_set, args.nb_epoch)
+    function(args.cv_folds, args.gesture_set, args.nb_epoch, args.batch_size)
