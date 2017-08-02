@@ -12,8 +12,11 @@ from sklearn.model_selection import LeaveOneGroupOut, StratifiedShuffleSplit
 import sklearn.metrics as mt
 
 import matplotlib.pyplot as plt
-
 import argparse
+
+NFFT_VAL = 4096
+OVERLAP = 0.5
+BRANGE = 16
 
 
 # @TODO: Add args to grid search model parameters
@@ -129,8 +132,10 @@ def loso_cv(cv_folds, gest_set, nb_epoch):
 
     gd = Read_Data.GestureData(gest_set=gest_set)
     print("Reading data")
-    x, y, user, input_shape, lab_enc = gd.compile_data(nfft=4096, overlap=0.5,
-                                                       brange=8)
+    x, y, user, input_shape, lab_enc = gd.compile_data(nfft=NFFT_VAL, overlap=OVERLAP,
+                                                       brange=BRANGE, keras_format=True,
+                                                       plot_spectogram=False,
+                                                       baseline_format=False)
     NUM_CLASSES = len(lab_enc.classes_)
     logo = LeaveOneGroupOut()
 
@@ -188,11 +193,11 @@ def plot_train_hist(train_val_hist, file_path):
     plt.savefig(file_path + "Loss_History.png")
 
 
-def strat_shuffle_split(X, y, split=0.3, random_state=12345):
+def strat_shuffle_split(x, y, split=0.3, random_state=12345):
     cv_obj = StratifiedShuffleSplit(n_splits=1, test_size=split, random_state=random_state)
-    for train_idx, test_idx in cv_obj.split(X, y):
-        x_add_train, y_add_train = X[train_idx, :, :, :], y[train_idx]
-        x_test, y_test = X[test_idx, :, :, :], y[test_idx]
+    for train_idx, test_idx in cv_obj.split(x, y):
+        x_add_train, y_add_train = x[train_idx, :, :, :], y[train_idx]
+        x_test, y_test = x[test_idx, :, :, :], y[test_idx]
 
     return x_add_train, x_test, y_add_train, y_test
 
@@ -205,8 +210,10 @@ def user_split_cv(cv_folds, nb_epoch, gest_set):
 
     gd = Read_Data.GestureData(gest_set=gest_set)
     print("Reading data")
-    x, y, user, input_shape, lab_enc = gd.compile_data(nfft=4096, overlap=0.5,
-                                                       brange=8)
+    x, y, user, input_shape, lab_enc = gd.compile_data(nfft=NFFT_VAL, overlap=OVERLAP,
+                                                       brange=BRANGE, keras_format=True,
+                                                       plot_spectogram=False,
+                                                       baseline_format=False)
     NUM_CLASSES = len(lab_enc.classes_)
 
     logo = LeaveOneGroupOut()
@@ -280,8 +287,10 @@ def personalized_cv(cv_folds, nb_epoch, gest_set):
 
     gd = Read_Data.GestureData(gest_set=gest_set)
     print("Reading data")
-    x, y, user, input_shape, lab_enc = gd.compile_data(nfft=4096, overlap=0.5,
-                                                       brange=8)
+    x, y, user, input_shape, lab_enc = gd.compile_data(nfft=NFFT_VAL, overlap=OVERLAP,
+                                                       brange=BRANGEf, keras_format=True,
+                                                       plot_spectogram=False,
+                                                       baseline_format=False)
     NUM_CLASSES = len(lab_enc.classes_)
 
     y_hat_user, y_test_user = [], []
@@ -357,7 +366,7 @@ if __name__ == '__main__':
     parser.add_argument('-gesture_set', type=int, default=1,
                         help="Gesture set. 1: All gestures, 2: Reduced Gesture 1, 3: Reduced Gesture 2, 4: Reduced "
                              "Gesture 3, 5: Reduced Gesture 4",
-                        choices=range(1,6))
+                        choices=range(1, 6))
     parser.add_argument('-cv_folds', type=int, help="Number of Cross validation folds", default=5)
     parser.add_argument('-nb_epoch', type=int, help="Number of epochs that trains the model", default=10)
     args = parser.parse_args()

@@ -10,7 +10,6 @@ from keras import backend as K
 
 from sklearn.model_selection import LeaveOneGroupOut, StratifiedShuffleSplit
 import sklearn.metrics as mt
-
 import matplotlib.pyplot as plt
 
 
@@ -120,6 +119,7 @@ def write_results(train_scores, test_scores, class_names, y_hat, y_true, file_pa
 
 
 def plot_train_hist(train_val_hist, file_path):
+    plt.clf()
     fig, axarr = plt.subplots(1, 2, sharey=True)
     i = 1
     for item in train_val_hist:
@@ -172,7 +172,7 @@ def loso_gridSearch_cv(x, y, user, lab_enc, batch_size=10, nb_epoch=10, file_pat
         class_names.append(lab_enc.classes_[y_test_copy])
         y_hat.append(yhat)
         y_true.append(y_test_copy)
-        # K.clear_session()
+        K.clear_session()
     write_results(train_scores, test_scores, class_names, y_hat, y_true, file_path)
     return train_val_hist
 
@@ -203,6 +203,7 @@ def grid_search(nb_epoch=200):
                 print("Train the model")
                 train_val_hist = loso_gridSearch_cv(x, y, user,
                                                     lab_enc,
+                                                    batch_size=64,
                                                     nb_epoch=nb_epoch,
                                                     file_path=fname)
                 plot_train_hist(train_val_hist, file_path=fname)
