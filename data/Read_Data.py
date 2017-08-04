@@ -180,7 +180,7 @@ class GestureData():
             return False
         return True
 
-    def get_user_data(self, user, **args):
+    def get_user_data(self, user, verbose, **args):
         user_path = './data/User_%d' % (user)
         files = [join(user_path, f)
                  for f in listdir(user_path) if isfile(join(user_path, f))]
@@ -200,7 +200,7 @@ class GestureData():
                                  'name': name,
                                  'user': user
                                  })
-            else:
+            elif verbose>0:
                 print("Skipping files")
                 # shutil.move(gest.file, user_path + '/skipped_files/')
 
@@ -234,12 +234,13 @@ class GestureData():
 
         return x, y, user, input_shape, le
 
-    def compile_data(self, nfft, overlap, brange, keras_format=True, baseline_format=True, plot_spectogram=True):
+    def compile_data(self, nfft, overlap, brange, max_seconds=3, keras_format=True, baseline_format=True,
+                     plot_spectogram=True, verbose=0):
         features = []
-        for user in [1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13, 14, 15, 16, 17]:
+        for user in [1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13, 15]:
             print("Collecting data for User: ", user)
-            features += self.get_user_data(user, load=True, nfft=nfft,
-                                           overlap=overlap, brange=brange, max_seconds=2.5)
+            features += self.get_user_data(user, verbose, load=True, nfft=nfft,
+                                           overlap=overlap, brange=brange, max_seconds=max_seconds)
         features = sorted(features, key=lambda k: k['name'])
 
         if plot_spectogram:
@@ -248,7 +249,8 @@ class GestureData():
             x_keras, y_keras, user, input_shape, lab_enc = self.keras_format(features)
 
             # normalize spec grams
-            x_keras[:, :, :-2, :] = (x_keras[:, :, :-2, :] - np.mean(x_keras[:, :, :-2, :])) / np.std(x_keras[:, :, :-2, :])
+            x_keras[:, :, :-2, :] = (x_keras[:, :, :-2, :] - np.mean(x_keras[:, :, :-2, :])) / np.std(
+                x_keras[:, :, :-2, :])
 
             # normalize the ir values
             x_keras[:, :, -2, :] = (x_keras[:, :, -2, :] - np.mean(x_keras[:, :, -2, :])) / np.std(x_keras[:, :, -2, :])
@@ -278,6 +280,9 @@ class GestureData():
             feat = item['features'].T
             doppler_feature = feat[:, :-2].reshape(-1)  # Flatten out doppler signature values
             ir1 = feat[:, -1]
+            # Compute average of non-zero elements
+            # ir1 - angle measurement
+            # ir2 - velocity measurement
             if ir1.sum() != 0:
                 ir1_feature = np.true_divide(ir1.sum(), (ir1 != 0).sum())
             else:

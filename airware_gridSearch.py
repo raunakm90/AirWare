@@ -179,7 +179,7 @@ def loso_gridSearch_cv(x, y, user, lab_enc, batch_size=10, nb_epoch=10, file_pat
 
 def grid_search(nb_epoch=200):
     global NUM_CLASSES, input_shape
-    file_path = "./gridSearch/"
+    file_path = "./gridSearch/fft_params/"
     nfft_try = [int(4096), int(2048), int(1024)]
     overlap_try = [0.9, 0.5, 0.75]
     brange_try = [8, 16]
