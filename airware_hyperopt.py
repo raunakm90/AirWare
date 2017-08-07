@@ -88,12 +88,6 @@ def split_model_1(x_train, x_test, y_train, y_test, param_list):
                   optimizer='rmsprop',
                   metrics=['acc'])
 
-    model = Model([image_input, ir_input], preds)
-    rmsprop = optimizers.rmsprop(lr={{choice(param_list.LR_VAL)}})
-    model.compile(loss='sparse_categorical_crossentropy',
-                  optimizer=rmsprop,
-                  metrics=['accuracy'])
-
     model.fit_generator(
         create_generator([x_train[:, :, 0:-2, :], x_train[:, :, -2:, :]], y_train, batch_size=param_list.BATCH_SIZE),
         steps_per_epoch=int(len(x_train) / param_list.BATCH_SIZE),

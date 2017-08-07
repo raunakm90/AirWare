@@ -237,7 +237,7 @@ class GestureData():
     def compile_data(self, nfft, overlap, brange, max_seconds=3, keras_format=True, baseline_format=True,
                      plot_spectogram=True, verbose=0):
         features = []
-        for user in [1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13, 15]:
+        for user in [1, 2, 3, 4, 5, 6, 8, 10, 11, 12, 13, 15, 16]:
             print("Collecting data for User: ", user)
             features += self.get_user_data(user, verbose, load=True, nfft=nfft,
                                            overlap=overlap, brange=brange, max_seconds=max_seconds)
