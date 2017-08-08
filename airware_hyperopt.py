@@ -13,7 +13,7 @@ from keras import optimizers
 
 from sklearn.model_selection import train_test_split
 
-from hyperopt import Trials, STATUS_OK, tpe, rand
+from hyperopt import Trials, STATUS_OK, tpe
 from hyperas import optim
 from hyperas.distributions import uniform, choice, normal
 
@@ -24,8 +24,7 @@ class GlobalParams():
         self.BRANGE = 16
         self.OVERLAP = 0.5
         self.LR_VAL = [10e-6, 10e-5, 10e-4, 10e-3, 10e-2, 10e-1, 1]
-        # self.NB_EPOCHS = [100, 200, 300, 400]
-        self.NB_EPOCHS = [10]
+        self.NB_EPOCHS = [100, 200, 300, 400]
         self.L2_VAL = {'mu': 0.001, 'std': 0.0001}
         self.DROPOUT_VAL = {'upper': 1, 'lower': 0}
         self.HIDDEN_UNITS = [512, 256, 128, 64, 32]
@@ -237,8 +236,8 @@ def hyperparam_search(model_fn, file_path):
     functions = [create_generator, GlobalParams]
     best_run, best_model = optim.minimize(model=model_fn,
                                           data=airware_data,
-                                          algo=rand.suggest,
-                                          max_evals=1,
+                                          algo=tpe.suggest,
+                                          max_evals=100,
                                           trials=Trials(),
                                           functions=functions)
 
