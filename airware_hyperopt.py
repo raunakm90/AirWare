@@ -1,5 +1,6 @@
 import os
 import json
+import argparse
 from data import Read_Data
 from keras.layers import Reshape, merge, concatenate
 from keras.layers import Dense, Dropout, Flatten
@@ -23,7 +24,8 @@ class GlobalParams():
         self.BRANGE = 16
         self.OVERLAP = 0.5
         self.LR_VAL = [10e-6, 10e-5, 10e-4, 10e-3, 10e-2, 10e-1, 1]
-        self.NB_EPOCHS = [100, 200, 300, 400]
+        # self.NB_EPOCHS = [100, 200, 300, 400]
+        self.NB_EPOCHS = [10]
         self.L2_VAL = {'mu': 0.001, 'std': 0.0001}
         self.DROPOUT_VAL = {'upper': 1, 'lower': 0}
         self.HIDDEN_UNITS = [512, 256, 128, 64, 32]
@@ -37,8 +39,7 @@ class GlobalParams():
 
 
 def airware_data():
-    global INPUT_SHAPE
-    global NUM_CLASSES
+    global INPUT_SHAPE, NUM_CLASSES
     param_list = GlobalParams()
     gd = Read_Data.GestureData(gest_set=1)
     x, y, user, INPUT_SHAPE, lab_enc = gd.compile_data(nfft=param_list.NFFT_VAL, overlap=param_list.OVERLAP,
@@ -88,8 +89,9 @@ def split_model_1(x_train, x_test, y_train, y_test, param_list):
                   kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}})(x)
 
     model = Model([image_input, ir_input], preds)
+    rmsprop = optimizers.rmsprop(lr={{choice(param_list.LR_VAL)}})
     model.compile(loss='sparse_categorical_crossentropy',
-                  optimizer='rmsprop',
+                  optimizer=rmsprop,
                   metrics=['acc'])
 
     model.fit_generator(
@@ -134,15 +136,15 @@ def split_model_2(x_train, x_test, y_train, y_test, param_list):
     x = Dense({{choice(param_list.HIDDEN_UNITS)}}, activation='relu',
               kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}},
               kernel_regularizer=l2_val)(x)
-    x = Dropout({{uniform(param_list.DROPOUT_VAL['lower'], param_list.HIDDEN_UNITS['upper'])}})(x)
+    x = Dropout({{uniform(param_list.DROPOUT_VAL['lower'], param_list.DROPOUT_VAL['upper'])}})(x)
     x = Dense({{choice(param_list.HIDDEN_UNITS)}}, activation='relu',
               kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}},
               kernel_regularizer=l2_val)(x)
-    x = Dropout({{uniform(param_list.DROPOUT_VAL['lower'], param_list.HIDDEN_UNITS['upper'])}})(x)
+    x = Dropout({{uniform(param_list.DROPOUT_VAL['lower'], param_list.DROPOUT_VAL['upper'])}})(x)
     x = Dense({{choice(param_list.HIDDEN_UNITS)}}, activation='relu',
               kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}},
               kernel_regularizer=l2_val)(x)
-    x = Dropout({{uniform(param_list.DROPOUT_VAL['lower'], param_list.HIDDEN_UNITS['upper'])}})(x)
+    x = Dropout({{uniform(param_list.DROPOUT_VAL['lower'], param_list.DROPOUT_VAL['upper'])}})(x)
 
     preds = Dense(NUM_CLASSES, activation='softmax',
                   kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}})(x)
@@ -195,12 +197,18 @@ def split_model_3(x_train, x_test, y_train, y_test, param_list):
     ir_x = Flatten()(MaxPooling1D(2)(x))
 
     x = concatenate([image_x, ir_x])
-    x = Dense(200, activation='relu', kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}},
+    x = Dense({{choice(param_list.HIDDEN_UNITS)}}, activation='relu',
+              kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}},
               kernel_regularizer=l2_val)(x)
-    x = Dense(100, activation='relu', kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}},
+    x = Dropout({{uniform(param_list.DROPOUT_VAL['lower'], param_list.DROPOUT_VAL['upper'])}})(x)
+    x = Dense({{choice(param_list.HIDDEN_UNITS)}}, activation='relu',
+              kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}},
               kernel_regularizer=l2_val)(x)
-    x = Dense(50, activation='relu', kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}},
+    x = Dropout({{uniform(param_list.DROPOUT_VAL['lower'], param_list.DROPOUT_VAL['upper'])}})(x)
+    x = Dense({{choice(param_list.HIDDEN_UNITS)}}, activation='relu',
+              kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}},
               kernel_regularizer=l2_val)(x)
+    x = Dropout({{uniform(param_list.DROPOUT_VAL['lower'], param_list.DROPOUT_VAL['upper'])}})(x)
 
     preds = Dense(NUM_CLASSES, activation='softmax',
                   kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}})(x)
@@ -242,18 +250,37 @@ def hyperparam_search(model_fn, file_path):
         json.dump(best_run, fp)
 
 
-if __name__ == '__main__':
+def hyper_opt_split_model_1():
     f_path = "./gridSearch/split_model_1/"
     if not os.path.exists(f_path):
         os.makedirs(f_path)
         hyperparam_search(split_model_1, f_path)
 
+
+def hyper_opt_split_model_2():
     f_path = "./gridSearch/split_model_2/"
     if not os.path.exists(f_path):
         os.makedirs(f_path)
         hyperparam_search(split_model_2, f_path)
 
+
+def hyper_opt_split_model_3():
     f_path = "./gridSearch/split_model_3/"
     if not os.path.exists(f_path):
         os.makedirs(f_path)
-        hyperparam_search(split_model_2, f_path)
+        hyperparam_search(split_model_3, f_path)
+
+
+if __name__ == '__main__':
+    function_map = {'model_1': hyper_opt_split_model_1,
+                    'model_2': hyper_opt_split_model_2,
+                    'model_3': hyper_opt_split_model_3}
+    parser = argparse.ArgumentParser(description="Hyperparameter optimization")
+    parser.add_argument('-model',
+                        help="Select model",
+                        choices=['model_1', 'model_2',
+                                 'model_3'])
+    args = parser.parse_args()
+    function = function_map[args.model]
+    print("Cross Validation Strategy:", function)
+    function()
