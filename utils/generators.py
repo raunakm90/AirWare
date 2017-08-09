@@ -1,6 +1,7 @@
 import numpy as np
 from keras.preprocessing.image import ImageDataGenerator
 
+
 def create_generator(XI, Y, batch_size=64):
     X = XI[0]
     I = XI[1]
@@ -21,9 +22,10 @@ def create_generator(XI, Y, batch_size=64):
             width_shift_range=0.1,
             # 0.1,  # randomly shift images vertically (fraction of total
             # height)
-            height_shift_range=0.1,
+            height_shift_range=0.0,
             horizontal_flip=False,  # randomly flip images
-            vertical_flip=False)  # randomly flip images
+            vertical_flip=False,
+            fill_mode='nearest')  # randomly flip images
 
         batchesSpec = datagenSpec.flow(
             X[idx], Y[idx], batch_size=batch_size, shuffle=False)
@@ -42,9 +44,10 @@ def create_generator(XI, Y, batch_size=64):
             width_shift_range=0.1,
             # 0.1,  # randomly shift images vertically (fraction of total
             # height)
-            height_shift_range=0.1,
+            height_shift_range=0.0,
             horizontal_flip=False,  # randomly flip images
-            vertical_flip=False)  # randomly flip images
+            vertical_flip=False,
+            fill_mode='nearest')  # randomly flip images
 
         batchesIR = datagenIR.flow(
             I[idx], Y[idx], batch_size=batch_size, shuffle=False)
