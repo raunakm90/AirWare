@@ -289,7 +289,7 @@ def hyperparam_search(model_fn, file_path):
     best_run, best_model = optim.minimize(model=model_fn,
                                           data=airware_data,
                                           algo=tpe.suggest,
-                                          max_evals=2,
+                                          max_evals=100,
                                           trials=Trials(),
                                           functions=functions)
 
