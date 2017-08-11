@@ -215,16 +215,16 @@ def train_clf_user_calibrated(pipe, clf_params, train_size=0.6, model_path=MODEL
                                                                        random_state=seed_gen)
 
             # Add additional training data to the original
-            x_train = np.vstack((x_train, x_add))
-            y_train = np.vstack((y_train.reshape((-1,1)), y_add.reshape((-1,1))))
-            y_train = y_train.reshape(-1)
+            x_train_new = np.vstack((x_train, x_add))
+            y_train_new = np.vstack((y_train.reshape((-1,1)), y_add.reshape((-1,1))))
+            y_train_new = y_train_new.reshape(-1)
 
             sort_idx = np.argsort(y_test_new.reshape(-1))
             x_test_new = x_test_new[sort_idx, :]
             y_test_new = y_test_new[sort_idx]
 
-            x_train_copy = x_train.copy()
-            y_train_copy = y_train.copy()
+            x_train_copy = x_train_new.copy()
+            y_train_copy = y_train_new.copy()
 
             x_test_copy = x_test_new.copy()
             y_test_copy = y_test_new.copy()
@@ -242,6 +242,7 @@ def train_clf_user_calibrated(pipe, clf_params, train_size=0.6, model_path=MODEL
             train_val_scores.append(clf_pipe.score(x_train_copy, y_train_copy))
             # Evaluate test scores/accuracy
             test_val_scores.append(clf_pipe.score(x_test_copy, y_test_copy))
+            del clf_pipe, x_train_new, y_train_new, x_train_copy, y_train_copy
 
             if train_size == 0.6:
                 y_true_val.append(y_test_copy)
