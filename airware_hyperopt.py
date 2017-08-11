@@ -18,27 +18,6 @@ from hyperas import optim
 from hyperas.distributions import uniform, choice, normal
 
 
-class HyperParams():
-    def __init__(self):
-        self.NFFT_VAL = 4096
-        self.BRANGE = 16
-        self.OVERLAP = 0.5
-        self.LR_VAL = [10e-6, 10e-5, 10e-4, 10e-3, 10e-2, 10e-1, 1]
-        self.NB_EPOCHS = [100, 200, 300, 400]
-        self.L2_VAL = {'mu': 0.001, 'std': 0.0001}
-        self.DROPOUT_VAL = {'upper': 1, 'lower': 0}
-        self.HIDDEN_UNITS = [512, 256, 128, 64, 32]
-        self.IMG_CONV_FILTERS = [8, 16, 32, 64]
-        self.IMG_CONV_SIZE = [2, 3, 5]
-        self.BATCH_SIZE = 32
-        self.KERNEL_INITIALIZER = ['he_uniform', 'glorot_uniform', 'lecun_uniform',
-                                   'he_normal', 'glorot_normal', 'lecun_normal']
-        self.cv_folds = 5
-
-    def __str__(self):
-        print("Class to define and store optimization and model parameters")
-
-
 def airware_data():
     param_list = HyperParams()
     gd = Read_Data.GestureData(gest_set=1)
@@ -83,7 +62,8 @@ def split_model_1(x_train, x_test, y_train, y_test, param_list):
 
     x = concatenate([image_x, ir_x])
 
-    x = Dense({{choice(param_list.HIDDEN_UNITS)}}, activation='relu', kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}},
+    x = Dense({{choice(param_list.HIDDEN_UNITS)}}, activation='relu',
+              kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}},
               kernel_regularizer=l2_val)(x)
     preds = Dense(param_list.num_classes, activation='softmax',
                   kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}})(x)
@@ -258,7 +238,8 @@ def split_model_4(x_train, x_test, y_train, y_test, param_list):
 
     x = concatenate([image_x, ir_x])
 
-    x = Dense({{choice(param_list.HIDDEN_UNITS)}}, activation='relu', kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}},
+    x = Dense({{choice(param_list.HIDDEN_UNITS)}}, activation='relu',
+              kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}},
               kernel_regularizer=l2_val)(x)
     preds = Dense(param_list.num_classes, activation='softmax',
                   kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}})(x)
@@ -328,6 +309,7 @@ def hyper_opt_split_model_4():
         os.makedirs(f_path)
         hyperparam_search(split_model_4, f_path)
 
+
 if __name__ == '__main__':
     function_map = {'model_1': hyper_opt_split_model_1,
                     'model_2': hyper_opt_split_model_2,
@@ -337,7 +319,7 @@ if __name__ == '__main__':
     parser.add_argument('-model',
                         help="Select model",
                         choices=['model_1', 'model_2',
-                                 'model_3','model_4'])
+                                 'model_3', 'model_4'])
     args = parser.parse_args()
     function = function_map[args.model]
     print("Model:", args.model)

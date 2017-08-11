@@ -2,6 +2,27 @@ import numpy as np
 from keras.preprocessing.image import ImageDataGenerator
 
 
+class HyperParams():
+    def __init__(self):
+        self.NFFT_VAL = 4096
+        self.BRANGE = 16
+        self.OVERLAP = 0.5
+        self.LR_VAL = [10e-6, 10e-5, 10e-4, 10e-3, 10e-2, 10e-1, 1]
+        self.NB_EPOCHS = [100, 200, 300, 400]
+        self.L2_VAL = {'mu': 0.001, 'std': 0.0001}
+        self.DROPOUT_VAL = {'upper': 1, 'lower': 0}
+        self.HIDDEN_UNITS = [512, 256, 128, 64, 32]
+        self.IMG_CONV_FILTERS = [8, 16, 32, 64]
+        self.IMG_CONV_SIZE = [2, 3, 5]
+        self.BATCH_SIZE = 32
+        self.KERNEL_INITIALIZER = ['he_uniform', 'glorot_uniform', 'lecun_uniform',
+                                   'he_normal', 'glorot_normal', 'lecun_normal']
+        self.cv_folds = 5
+
+    def __str__(self):
+        print("Class to define and store optimization and model parameters")
+
+
 def create_generator(XI, Y, batch_size=64):
     X = XI[0]
     I = XI[1]
