@@ -34,7 +34,7 @@ def loso_cv(model_fn, gest_set, hyper_param_path, results_file_path):
     logo = LeaveOneGroupOut()
     train_scores, test_scores = [], []
     train_val_hist = []
-    y_true, y_hat = [], []
+    y_true, y_pred = [], []
     i = 1
 
     # Callback for early stopping. Patience monitor number of epochs. Min_Delta monitors the change in metric.
@@ -70,11 +70,11 @@ def loso_cv(model_fn, gest_set, hyper_param_path, results_file_path):
             split_model.evaluate([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]], y_test_copy))
 
         # Predict for test data
-        yhat = np.argmax(split_model.predict([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]]), axis=1)
-        y_hat.append(yhat)
+        y_pred.append(np.argmax(split_model.predict([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]]), axis=1))
         y_true.append(y_test_copy)
 
-    write_results_models(train_scores, test_scores, lab_enc.classes_, y_hat, y_true, results_file_path)
+    write_results_models(train_scores=train_scores, test_scores=test_scores, class_names=lab_enc.classes_,
+                         y_pred=y_pred, y_true=y_true, file_path=results_file_path)
     write_train_hist(train_val_hist, results_file_path)
 
     return None
@@ -148,7 +148,7 @@ def personalized_cv(model_fn, gest_set, hyper_param_path, results_file_path):
         write_train_hist(train_val_hist, results_file_path + user_name)
 
     write_results_models(train_scores_user, test_scores_user, lab_enc.classes_, y_hat_user, y_true_user,
-                               results_file_path)
+                         results_file_path)
     return None
 
 
@@ -232,5 +232,5 @@ def user_split_cv(model_fn, gest_set, hyper_param_path, results_file_path):
         y_true.append(cv_ytrue)
         write_train_hist(train_val_hist, results_file_path + user_name)
     write_results_models(train_score, test_score, lab_enc.classes_, y_hat, y_true,
-                               results_file_path)
+                         results_file_path)
     return None
