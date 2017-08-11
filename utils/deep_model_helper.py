@@ -91,9 +91,8 @@ def personalized_cv(model_fn, gest_set, hyper_param_path, results_file_path):
     # CV object
     logo = LeaveOneGroupOut()
 
-    y_hat_user, y_true_user = [], []
-    test_scores_user, train_scores_user = [], []
-    train_hist_user = []
+    y_pred, y_true = [], []
+    test_scores, train_scores = [], []
     i = 0  # Keep track of users
 
     for rem_idx, keep_idx in logo.split(x, y, user):
@@ -105,9 +104,10 @@ def personalized_cv(model_fn, gest_set, hyper_param_path, results_file_path):
         # Keep only the user data
         # x_rem, y_rem = x[rem_idx,:,:,:], y[rem_idx]
         x_keep, y_keep = x[keep_idx, :, :, :], y[keep_idx]
-        train_scores, test_scores = [], []
+
+        train_scores_user, test_scores_user = [], []
+        y_true_user, y_pred_user = [], []
         train_val_hist = []
-        y_true, y_hat = [], []
 
         # Define CV object
         cv_strat = StratifiedShuffleSplit(n_splits=param_list.cv_folds, test_size=0.4, random_state=i * 243)
@@ -131,24 +131,25 @@ def personalized_cv(model_fn, gest_set, hyper_param_path, results_file_path):
                 epochs=param_list.NB_EPOCHS[hyper_param_dict['epochs']], verbose=0,
                 validation_data=([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]], y_test_copy)))
 
-            train_scores.append(
+            train_scores_user.append(
                 split_model.evaluate([x_train_copy[:, :, 0:-2, :], x_train_copy[:, :, -2:, :]], y_train_copy))
-            test_scores.append(
+            test_scores_user.append(
                 split_model.evaluate([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]], y_test_copy))
 
-            y_hat.append(
+            y_pred_user.append(
                 np.argmax(split_model.predict([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]]), axis=1))
-            y_true.append(y_test)
+            y_true_user.append(y_test_copy)
             j += 1
 
-        y_hat_user.append(y_hat)
-        y_true_user.append(y_true)
-        train_scores_user.append(train_scores)
-        test_scores_user.append(test_scores)
-        write_train_hist(train_val_hist, results_file_path + user_name)
+        y_pred.append(y_pred_user)
+        y_true.append(y_true_user)
+        train_scores.append(train_scores)
+        test_scores.append(test_scores)
+        # write_train_hist(train_val_hist, results_file_path + user_name)
 
-    write_results_models(train_scores_user, test_scores_user, lab_enc.classes_, y_hat_user, y_true_user,
-                         results_file_path)
+    write_results_models(train_scores=train_scores, test_scores=test_scores, class_names=lab_enc.classes_,
+                         y_pred=y_pred, y_true=y_true,
+                         file_path=results_file_path)
     return None
 
 
