@@ -251,7 +251,7 @@ def split_model_4(x_train, x_test, y_train, y_test, param_list):
     x = Reshape(target_shape=(param_list.input_shape[0], 2, 1))(ir_input)
     x = Conv2D(2, 3, padding='same', activation='relu',
                kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}}, kernel_regularizer=l2_val)(x)
-    x = MaxPooling1D(2)(x)
+    x = MaxPooling2D(2)(x)
     x = Conv2D(2, 3, padding='same', activation='relu',
                kernel_initializer={{choice(param_list.KERNEL_INITIALIZER)}}, kernel_regularizer=l2_val)(x)
     ir_x = Flatten()(MaxPooling2D(2)(x))
