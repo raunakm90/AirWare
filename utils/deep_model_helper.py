@@ -143,9 +143,8 @@ def personalized_cv(model_fn, gest_set, hyper_param_path, results_file_path):
 
         y_pred.append(y_pred_user)
         y_true.append(y_true_user)
-        train_scores.append(train_scores)
-        test_scores.append(test_scores)
-        # write_train_hist(train_val_hist, results_file_path + user_name)
+        train_scores.append(train_scores_user)
+        test_scores.append(test_scores_user)
 
     write_results_models(train_scores=train_scores, test_scores=test_scores, class_names=lab_enc.classes_,
                          y_pred=y_pred, y_true=y_true,
