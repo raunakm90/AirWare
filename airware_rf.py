@@ -65,7 +65,9 @@ def eval_rf(cv_strategy='loso'):
         print('It took ', time.time() - start, ' seconds.')
     elif cv_strategy == 'user_calibrated':
         print("Random Forest with User Calibrated CV")
-        train_clf_user_calibrated(pipe, rf_clf_params, MODEL_PATH + "user_calibrated/rf")
+        train_size_percent = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+        for train_size in train_size_percent:
+            train_clf_user_calibrated(pipe, rf_clf_params, train_size, MODEL_PATH + "user_calibrated/rf"+str(train_size))
         print('It took ', time.time() - start, ' seconds.')
     else:
         raise ValueError("Cross-validation strategy not defined")
@@ -84,7 +86,7 @@ if __name__ == '__main__':
                         default='eval_rf')
     parser.add_argument('-cv_strategy',
                         help="Define cross-validation strategy",
-                        choices=['loso', 'personalized','user_calibrated'],
+                        choices=['loso', 'personalized', 'user_calibrated'],
                         default=None)
 
     args = parser.parse_args()
