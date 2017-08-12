@@ -16,7 +16,7 @@ def run_split_model_1(gest_set, cv_strategy):
     elif cv_strategy == 'user_calibrated':
         train_size_percent = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
         for train_size in train_size_percent:
-            personalized_cv(model_fn, gest_set=gest_set, hyper_param_path=hyper_param_path,
+            user_split_cv(model_fn, gest_set=gest_set, hyper_param_path=hyper_param_path, train_size=train_size,
                             results_file_path="./user_split_cv/gest_set_" + str(gest_set) + model_result_path + str(
                                 train_size))
     else:
@@ -36,7 +36,7 @@ def run_split_model_2(gest_set, cv_strategy):
     elif cv_strategy == 'user_calibrated':
         train_size_percent = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
         for train_size in train_size_percent:
-            personalized_cv(model_fn, gest_set=gest_set, hyper_param_path=hyper_param_path,
+            user_split_cv(model_fn, gest_set=gest_set, hyper_param_path=hyper_param_path, train_size=train_size,
                             results_file_path="./user_split_cv/gest_set_" + str(gest_set) + model_result_path + str(
                                 train_size))
     else:
@@ -56,7 +56,7 @@ def run_split_model_3(gest_set, cv_strategy):
     elif cv_strategy == 'user_calibrated':
         train_size_percent = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
         for train_size in train_size_percent:
-            personalized_cv(model_fn, gest_set=gest_set, hyper_param_path=hyper_param_path,
+            user_split_cv(model_fn, gest_set=gest_set, hyper_param_path=hyper_param_path, train_size=train_size,
                             results_file_path="./user_split_cv/gest_set_" + str(gest_set) + model_result_path + str(
                                 train_size))
     else:
@@ -76,7 +76,7 @@ def run_split_model_4(gest_set, cv_strategy):
     elif cv_strategy == 'user_calibrated':
         train_size_percent = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
         for train_size in train_size_percent:
-            personalized_cv(model_fn, gest_set=gest_set, hyper_param_path=hyper_param_path,
+            user_split_cv(model_fn, gest_set=gest_set, hyper_param_path=hyper_param_path, train_size=train_size,
                             results_file_path="./user_split_cv/gest_set_" + str(gest_set) + model_result_path + str(
                                 train_size))
     else:

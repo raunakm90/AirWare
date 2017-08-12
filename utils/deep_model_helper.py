@@ -1,8 +1,8 @@
 import numpy as np
+from data import Read_Data
 from .generators import create_generator
 from .generate_report import write_results_models, write_train_hist
 import utils.models as model
-from data import Read_Data
 from sklearn.model_selection import LeaveOneGroupOut, StratifiedShuffleSplit, train_test_split
 import json
 import keras.backend as K
@@ -162,7 +162,7 @@ def strat_shuffle_split(x, y, split=0.3, random_state=12345):
 
 
 # 60-40 User split CV
-def user_split_cv(model_fn, gest_set, hyper_param_path, results_file_path):
+def user_split_cv(model_fn, gest_set, hyper_param_path, train_size, results_file_path):
     x, y, user, lab_enc, param_list = airware_data(gest_set)
 
     # Read the best parameters for the given model
@@ -171,8 +171,7 @@ def user_split_cv(model_fn, gest_set, hyper_param_path, results_file_path):
 
     logo = LeaveOneGroupOut()
     train_score, test_score = [], []
-    y_hat, y_true = [], []
-    class_names = []
+    y_pred, y_true = [], []
     train_val_hist = []
     i = 0
     for train_idx, test_idx in logo.split(x, y, user):
@@ -184,32 +183,33 @@ def user_split_cv(model_fn, gest_set, hyper_param_path, results_file_path):
         x_train, y_train = x[train_idx, :, :, :], y[train_idx]
         x_test, y_test = x[test_idx, :, :, :], y[test_idx]
 
-        cv_train_score, cv_test_score = [], []
-        cv_yhat, cv_ytrue = [], []
-        cv_train_val_hist = []
+        train_scores_user, test_scores_user = [], []
+        y_pred_user, y_true_user = [], []
+        train_val_hist_user = []
 
         for j in range(param_list.cv_folds):
             print("Fold:", j)
             seed_gen = j * 200
             # Split user test data - 60% added to the training data set
-            x_add, x_test_new, y_add, y_test_new = strat_shuffle_split(x_test, y_test, split=0.6, random_state=seed_gen)
+            x_add, x_test_new, y_add, y_test_new = strat_shuffle_split(x_test, y_test, split=train_size,
+                                                                       random_state=seed_gen)
 
             # Add additional training data to the original
-            x_train = np.vstack((x_train, x_add))
-            y_train = np.vstack((y_train, y_add))
+            x_train_new = np.vstack((x_train, x_add))
+            y_train_new = np.vstack((y_train, y_add))
 
             sort_idx = np.argsort(y_test_new.reshape(-1))
             x_test_new = x_test_new[sort_idx, :, :, :]
             y_test_new = y_test_new[sort_idx]
 
-            x_train_copy = x_train.copy()
-            y_train_copy = y_train.copy()
+            x_train_copy = x_train_new.copy()
+            y_train_copy = y_train_new.copy()
 
             x_test_copy = x_test_new.copy()
             y_test_copy = y_test_new.copy()
 
             split_model = model_fn(hyper_param_dict, param_list)
-            cv_train_val_hist.append(split_model.fit_generator(
+            train_val_hist_user.append(split_model.fit_generator(
                 create_generator([x_train_copy[:, :, 0:-2, :], x_train_copy[:, :, -2:, :]], y_train_copy,
                                  batch_size=param_list.BATCH_SIZE),
                 steps_per_epoch=int(len(x_train_copy) / param_list.BATCH_SIZE),
@@ -217,20 +217,23 @@ def user_split_cv(model_fn, gest_set, hyper_param_path, results_file_path):
                 epochs=param_list.NB_EPOCHS[hyper_param_dict['epochs']], verbose=0,
                 validation_data=([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]], y_test_copy)))
 
-            cv_train_score.append(
+            train_scores_user.append(
                 split_model.evaluate([x_train_copy[:, :, 0:-2, :], x_train_copy[:, :, -2:, :]], y_train_copy))
-            cv_test_score.append(
+            test_scores_user.append(
                 split_model.evaluate([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]], y_test_copy))
+            if train_size == 0.6:
+                y_true_user.append(y_test_copy)
+                y_pred_user.append(
+                    np.argmax(split_model.predict([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]]), axis=1))
+            del x_train_new, y_train_new
 
-            y_hat_temp = np.argmax(split_model.predict([x_test_copy[:, :, 0:-2, :], x_test_copy[:, :, -2:, :]]), axis=1)
-            cv_ytrue.append(y_test_copy)
-            cv_yhat.append(y_hat_temp)
-
-        train_score.append(cv_train_score)
-        test_score.append(cv_test_score)
-        y_hat.append(cv_yhat)
-        y_true.append(cv_ytrue)
-        write_train_hist(train_val_hist, results_file_path + user_name)
-    write_results_models(train_score, test_score, lab_enc.classes_, y_hat, y_true,
-                         results_file_path)
+        train_score.append(train_scores_user)
+        test_score.append(test_scores_user)
+        if train_size==0.6:
+            y_pred.append(y_pred_user)
+            y_true.append(y_true_user)
+        # write_train_hist(train_val_hist_user, results_file_path + user_name)
+    write_results_models(train_scores=train_score, test_scores=test_score, class_names=lab_enc.classes_, y_pred=y_pred,
+                         y_true=y_true,
+                         file_path=results_file_path)
     return None
