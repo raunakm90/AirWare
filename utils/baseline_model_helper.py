@@ -216,7 +216,7 @@ def train_clf_user_calibrated(pipe, clf_params, train_size=0.6, model_path=MODEL
 
             # Add additional training data to the original
             x_train_new = np.vstack((x_train, x_add))
-            y_train_new = np.vstack((y_train.reshape((-1,1)), y_add.reshape((-1,1))))
+            y_train_new = np.vstack((y_train.reshape((-1, 1)), y_add.reshape((-1, 1))))
             y_train_new = y_train_new.reshape(-1)
 
             sort_idx = np.argsort(y_test_new.reshape(-1))
@@ -257,4 +257,98 @@ def train_clf_user_calibrated(pipe, clf_params, train_size=0.6, model_path=MODEL
                          y_pred=y_pred, y_true=y_true, file_path=model_path)
     print('It took ', time.time() - start, ' seconds.')
 
+    return None
+
+
+def train_clf_doppler(pipe, clf_params, model_path=MODEL_PATH):
+    cv_obj = LeaveOneGroupOut()
+
+    train_scores, test_scores = [], []
+    y_true, y_pred = [], []
+    i = 1
+    start = time.time()
+
+    x, y, user, lab_enc = airware_baseline_data()
+
+    # Delete near zero variance columns
+    nz_var_ind = remove_near_zero_var(x, thresh=20)
+    x = np.delete(x, nz_var_ind, axis=1)
+
+    for train_idx, test_idx in cv_obj.split(x, y, user):
+        print("User:", i)
+        i += 1
+        # Train and test data - leave one subject out
+        x_train, y_train = x[train_idx, :-2], y[train_idx]
+        x_test, y_test = x[test_idx, :-2], y[test_idx]
+
+        # Create copies of the train and test data sets
+        x_train_copy, y_train_copy = x_train.copy(), y_train.copy()
+        x_test_copy, y_test_copy = x_test.copy(), y_test.copy()
+
+        # Call model function - Refit a new model
+        clf_pipe = pipe.set_params(**clf_params)
+
+        # Fit model
+        clf_pipe.fit(x_train_copy, y_train_copy)
+        # Evaluate training scores/accuracy
+        train_scores.append(clf_pipe.score(x_train_copy, y_train_copy))
+        # Evaluate test scores/accuracy
+        test_scores.append(clf_pipe.score(x_test_copy, y_test_copy))
+
+        # Predict for test data
+        y_pred_user = clf_pipe.predict(x_test_copy)
+        y_pred.append(y_pred_user)  # Collect predictions for all users
+        y_true.append(y_test_copy)  # Collect true values for all users
+
+    # y_true = flat_list_of_array(y_true)
+    # y_hat = flat_list_of_array(y_hat)
+    print(np.mean(test_scores))
+    write_results_models(train_scores=train_scores, test_scores=test_scores, class_names=lab_enc.classes_,
+                         y_pred=y_pred, y_true=y_true, file_path=model_path)
+    print('It took ', time.time() - start, ' seconds.')
+    return None
+
+
+def train_clf_ir(pipe, clf_params, model_path=MODEL_PATH):
+    cv_obj = LeaveOneGroupOut()
+
+    train_scores, test_scores = [], []
+    y_true, y_pred = [], []
+    i = 1
+    start = time.time()
+
+    x, y, user, lab_enc = airware_baseline_data()
+
+    for train_idx, test_idx in cv_obj.split(x, y, user):
+        print("User:", i)
+        i += 1
+        # Train and test data - leave one subject out
+        x_train, y_train = x[train_idx, -2:], y[train_idx]
+        x_test, y_test = x[test_idx, -2:], y[test_idx]
+
+        # Create copies of the train and test data sets
+        x_train_copy, y_train_copy = x_train.copy(), y_train.copy()
+        x_test_copy, y_test_copy = x_test.copy(), y_test.copy()
+
+        # Call model function - Refit a new model
+        clf_pipe = pipe.set_params(**clf_params)
+
+        # Fit model
+        clf_pipe.fit(x_train_copy, y_train_copy)
+        # Evaluate training scores/accuracy
+        train_scores.append(clf_pipe.score(x_train_copy, y_train_copy))
+        # Evaluate test scores/accuracy
+        test_scores.append(clf_pipe.score(x_test_copy, y_test_copy))
+
+        # Predict for test data
+        y_pred_user = clf_pipe.predict(x_test_copy)
+        y_pred.append(y_pred_user)  # Collect predictions for all users
+        y_true.append(y_test_copy)  # Collect true values for all users
+
+    # y_true = flat_list_of_array(y_true)
+    # y_hat = flat_list_of_array(y_hat)
+    print(np.mean(test_scores))
+    write_results_models(train_scores=train_scores, test_scores=test_scores, class_names=lab_enc.classes_,
+                         y_pred=y_pred, y_true=y_true, file_path=model_path)
+    print('It took ', time.time() - start, ' seconds.')
     return None

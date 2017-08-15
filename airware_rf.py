@@ -1,4 +1,4 @@
-from data import Read_Data
+from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
 from utils.baseline_model_helper import *
 from utils.generate_report import *
@@ -73,21 +73,67 @@ def eval_rf(cv_strategy='loso'):
         raise ValueError("Cross-validation strategy not defined")
 
 
+def eval_rf_doppler(cv_strategy='loso'):
+    start = time.time()
+    rf_clf_params = {'classify__bootstrap': True,
+                     'classify__criterion': 'gini',
+                     'classify__class_weight': 'balanced',
+                     'classify__max_features': 'sqrt',
+                     'classify__min_samples_leaf': 1,
+                     'classify__n_estimators': 1000,
+                     'classify__random_state': 2346,
+                     'reduce_dim__n_components': 100}
+    pipe = Pipeline([
+        ('normalize', StandardScaler()),
+        ('reduce_dim', PCA()),
+        ('classify', RandomForestClassifier())
+    ])
+    if cv_strategy == 'loso':
+        print("RF with Leave One Subject CV - Doppler")
+        train_clf_doppler(pipe, rf_clf_params, MODEL_PATH + "/doppler/")
+        print('It took ', time.time() - start, ' seconds.')
+    else:
+        raise ValueError("Cross-validation strategy not defined")
+
+
+def eval_rf_ir(cv_strategy='loso'):
+    start = time.time()
+    rf_clf_params = {'classify__bootstrap': True,
+                     'classify__criterion': 'gini',
+                     'classify__class_weight': 'balanced',
+                     'classify__max_features': 'sqrt',
+                     'classify__min_samples_leaf': 1,
+                     'classify__n_estimators': 1000,
+                     'classify__random_state': 2346}
+    pipe = Pipeline([
+        ('normalize', StandardScaler()),
+        ('classify', RandomForestClassifier())
+    ])
+    if cv_strategy == 'loso':
+        print("Random Forest with Leave One Subject CV - IR")
+        train_clf_ir(pipe, rf_clf_params, MODEL_PATH + "/ir/")
+        print('It took ', time.time() - start, ' seconds.')
+    else:
+        raise ValueError("Cross-validation strategy not defined")
+
+
 if __name__ == '__main__':
     function_map = {'gridSearch': run_gridSearch_rf,
-                    'eval_rf': eval_rf}
+                    'eval_rf': eval_rf,
+                    'eval_rf_doppler':eval_rf_doppler,
+                    'eval_rf_ir':eval_rf_ir}
     parser = argparse.ArgumentParser(
         description="AirWare Random forest grid search and train model using different CV strategies")
     # "?" one argument consumed from the command line and produced as a single item
     # Positional arguments
     parser.add_argument('-model_strategy',
                         help="Define function to run for Random Forest",
-                        choices=['gridSearch', 'eval_rf'],
+                        choices=['gridSearch', 'eval_rf', 'eval_rf_doppler', 'eval_rf_ir'],
                         default='eval_rf')
     parser.add_argument('-cv_strategy',
                         help="Define cross-validation strategy",
                         choices=['loso', 'personalized', 'user_calibrated'],
-                        default=None)
+                        default='loso')
 
     args = parser.parse_args()
     function = function_map[args.model_strategy]

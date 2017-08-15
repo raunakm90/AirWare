@@ -1,4 +1,5 @@
 from sklearn.svm import SVC
+from sklearn.decomposition import PCA
 from utils.baseline_model_helper import *
 from utils.generate_report import *
 import argparse
@@ -46,6 +47,42 @@ def run_gridSearch_svm(cv_strategy=None):
     return grid_search_best_estimator
 
 
+def eval_svm_doppler(cv_strategy='loso'):
+    start = time.time()
+    svm_clf_params = {'classify__gamma': 1.0,
+                      'classify__C': 10,
+                      'classify__class_weight': 'balanced',
+                      'reduce_dim__n_components': 100}
+    pipe = Pipeline([
+        ('normalize', StandardScaler()),
+        ('reduce_dim', PCA()),
+        ('classify', SVC())
+    ])
+    if cv_strategy == 'loso':
+        print("SVM with Leave One Subject CV - Doppler")
+        train_clf_doppler(pipe, svm_clf_params, MODEL_PATH + "/doppler/")
+        print('It took ', time.time() - start, ' seconds.')
+    else:
+        raise ValueError("Cross-validation strategy not defined")
+
+
+def eval_svm_ir(cv_strategy='loso'):
+    start = time.time()
+    svm_clf_params = {'classify__gamma': 1.0,
+                      'classify__C': 10.0,
+                      'classify__class_weight': 'balanced'}
+    pipe = Pipeline([
+        ('normalize', StandardScaler()),
+        ('classify', SVC())
+    ])
+    if cv_strategy == 'loso':
+        print("SVM with Leave One Subject CV - IR")
+        train_clf_ir(pipe, svm_clf_params, MODEL_PATH + "/ir/")
+        print('It took ', time.time() - start, ' seconds.')
+    else:
+        raise ValueError("Cross-validation strategy not defined")
+
+
 def eval_svm(cv_strategy='loso'):
     start = time.time()
     svm_clf_params = joblib.load(MODEL_PATH + "clf_gridsearch.pkl")
@@ -71,18 +108,18 @@ def eval_svm(cv_strategy='loso'):
         print('It took ', time.time() - start, ' seconds.')
     else:
         raise ValueError("Cross-validation strategy not defined")
-
-
 if __name__ == '__main__':
     function_map = {'gridSearch': run_gridSearch_svm,
-                    'eval_svm': eval_svm}
+                    'eval_svm': eval_svm,
+                    'eval_svm_doppler':eval_svm_doppler,
+                    'eval_svm_ir':eval_svm_ir}
     parser = argparse.ArgumentParser(
         description="AirWare SVM grid search and train model using different CV strategies")
     # "?" one argument consumed from the command line and produced as a single item
     # Positional arguments
     parser.add_argument('-model_strategy',
                         help="Define function to run for SVM",
-                        choices=['gridSearch', 'eval_svm'],
+                        choices=['gridSearch', 'eval_svm', 'eval_svm_doppler', 'eval_svm_ir'],
                         default='eval_svm')
     parser.add_argument('-cv_strategy',
                         help="Define cross-validation strategy",

@@ -1,4 +1,5 @@
 from sklearn.neural_network import MLPClassifier
+from sklearn.decomposition import PCA
 from utils.baseline_model_helper import *
 from utils.generate_report import *
 import argparse
@@ -22,7 +23,7 @@ def run_gridSearch_mlp(cv_strategy=None):
     param_grid = {
         'reduce_dim__n_components': n_components_range,
         'reduce_dim__mask': [mask],
-        'classify__hidden_layer_sizes': [(50,), (100,), (200,), (500, ), (50, 50,), (100, 100,), (50, 100,), (100, 500,),
+        'classify__hidden_layer_sizes': [(50,), (100,), (200,), (500,), (50, 50,), (100, 100,), (50, 100,), (100, 500,),
                                          (500, 100,), (100, 200), (200, 100),
                                          (500, 250,), (250, 100,)],
         'classify__alpha': [0.0001, 0.01, 1, 10, 100],
@@ -69,16 +70,66 @@ def eval_mlp(cv_strategy='loso'):
         raise ValueError("Cross-validation strategy not defined")
 
 
+def eval_mlp_doppler(cv_strategy='loso'):
+    start = time.time()
+    mlp_clf_params = {'classify__activation': 'tanh',
+                      'classify__alpha': 0.1,
+                      'classify__beta_1': 0.9,
+                      'classify__beta_2': 0.999,
+                      'classify__early_stopping': True,
+                      'classify__hidden_layer_sizes': (500, 250),
+                      'classify__max_iter': 1000,
+                      'classify__solver': 'adam',
+                      'classify__random_state': 576,
+                      'reduce_dim__n_components': 100}
+    pipe = Pipeline([
+        ('normalize', StandardScaler()),
+        ('reduce_dim', PCA()),
+        ('classify', MLPClassifier())
+    ])
+    if cv_strategy == 'loso':
+        print("MLP with Leave One Subject CV - Doppler")
+        train_clf_doppler(pipe, mlp_clf_params, MODEL_PATH + "/doppler/")
+        print('It took ', time.time() - start, ' seconds.')
+    else:
+        raise ValueError("Cross-validation strategy not defined")
+
+
+def eval_mlp_ir(cv_strategy='loso'):
+    start = time.time()
+    mlp_clf_params = {'classify__activation': 'tanh',
+                      'classify__alpha': 0.1,
+                      'classify__beta_1': 0.9,
+                      'classify__beta_2': 0.999,
+                      'classify__early_stopping': True,
+                      'classify__hidden_layer_sizes': (500, 250),
+                      'classify__max_iter': 1000,
+                      'classify__solver': 'adam',
+                      'classify__random_state': 576}
+    pipe = Pipeline([
+        ('normalize', StandardScaler()),
+        ('classify', MLPClassifier())
+    ])
+    if cv_strategy == 'loso':
+        print("MLP with Leave One Subject CV - IR")
+        train_clf_ir(pipe, mlp_clf_params, MODEL_PATH + "/ir/")
+        print('It took ', time.time() - start, ' seconds.')
+    else:
+        raise ValueError("Cross-validation strategy not defined")
+
+
 if __name__ == '__main__':
     function_map = {'gridSearch': run_gridSearch_mlp,
-                    'eval_mlp': eval_mlp}
+                    'eval_mlp': eval_mlp,
+                    'eval_mlp_doppler': eval_mlp_doppler,
+                    'eval_mlp_ir': eval_mlp_ir}
     parser = argparse.ArgumentParser(
         description="AirWare MLP grid search and train model using different CV strategies")
     # "?" one argument consumed from the command line and produced as a single item
     # Positional arguments
     parser.add_argument('-model_strategy',
                         help="Define function to run for MLP",
-                        choices=['gridSearch', 'eval_mlp'],
+                        choices=['gridSearch', 'eval_mlp', 'eval_mlp_doppler', 'eval_mlp_ir'],
                         default='eval_mlp')
     parser.add_argument('-cv_strategy',
                         help="Define cross-validation strategy",
