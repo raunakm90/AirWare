@@ -156,15 +156,15 @@ class GestureData():
                                "circle", "erase"]
         elif gest_set == 2:
             self.shortNames = ["flickr", "flicku", "flickd", "flickl",
-                               "dtap", "dclick", "magicw", "circle", "erase"]
+                               "dtap", "snap", "erase"]
         elif gest_set == 3:
             self.shortNames = ["flickr", "flicku", "flickd", "flickl",
                                "panr", "panu", "pand", "panl", "erase"]
         elif gest_set == 4:
-            self.shortNames = ["zoomi", "zooma", "magicw",
+            self.shortNames = ["zoomi", "zooma",
                                "panr", "panu", "pand", "panl", "erase"]
         elif gest_set == 5:
-            self.shortNames = ["magicw", "slicel", "slicer", "whip"]
+            self.shortNames = ["snap", "slicel", "slicer", "whip"]
 
     # Check if the gesture name exists
     def map_name(self, file):
@@ -200,7 +200,7 @@ class GestureData():
                                  'name': name,
                                  'user': user
                                  })
-            elif verbose>0:
+            elif verbose > 0:
                 print("Skipping files")
                 # shutil.move(gest.file, user_path + '/skipped_files/')
 
