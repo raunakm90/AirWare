@@ -1,5 +1,6 @@
 import numpy as np
 import argparse
+import utils.models as model
 from utils.deep_model_helper import *
 
 
@@ -54,7 +55,10 @@ def run_split_model_3(gest_set, cv_strategy):
         personalized_cv(model_fn, gest_set=gest_set, hyper_param_path=hyper_param_path,
                         results_file_path="./personalized_cv/gest_set_" + str(gest_set) + model_result_path)
     elif cv_strategy == 'user_calibrated':
-        train_size_percent = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+        if gest_set ==1:
+            train_size_percent = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+        else:
+            train_size_percent = [0.6]
         for train_size in train_size_percent:
             user_split_cv(model_fn, gest_set=gest_set, hyper_param_path=hyper_param_path, train_size=train_size,
                             results_file_path="./user_split_cv/gest_set_" + str(gest_set) + model_result_path + str(
@@ -96,9 +100,9 @@ if __name__ == '__main__':
                         choices=['model_1', 'model_2', 'model_3', 'model_4'])
 
     parser.add_argument('-cv_strategy',
-                        help="Define CV Strategy. loso: Leave one subject out, user_split: Partial train and test "
+                        help="Define CV Strategy. loso: Leave one subject out, user_calibrated: Partial train and test "
                              "user, personalized_cv: Train and test only for a given user",
-                        choices=['loso', 'user_split',
+                        choices=['loso', 'user_calibrated',
                                  'personalized'])
     parser.add_argument('-gesture_set', type=int, default=1,
                         help="Gesture set. 1: All gestures, 2: Reduced Gesture 1, 3: Reduced Gesture 2, 4: Reduced "

@@ -1,8 +1,7 @@
 import numpy as np
 from data import Read_Data
-from .generators import create_generator
+from .generators import create_generator, HyperParams
 from .generate_report import write_results_models, write_train_hist
-import utils.models as model
 from sklearn.model_selection import LeaveOneGroupOut, StratifiedShuffleSplit, train_test_split
 import json
 import keras.backend as K
@@ -10,7 +9,7 @@ import keras
 
 
 def airware_data(gest_set=1):
-    param_list = model.HyperParams()
+    param_list = HyperParams()
     gd = Read_Data.GestureData(gest_set=gest_set)
     x, y, user, input_shape, lab_enc = gd.compile_data(nfft=param_list.NFFT_VAL, overlap=param_list.OVERLAP,
                                                        brange=param_list.BRANGE, max_seconds=2.5,
